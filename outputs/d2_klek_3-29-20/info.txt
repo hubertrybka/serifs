@@ -1,0 +1,12 @@
+model_path: models/SVC_sonic/model.pkl
+latent_size: 32
+n_samples: 10000
+init_points: 10
+n_iter: 40
+bounds: 4.0
+verbosity: 1
+time elapsed per sample: 0.09 min
+mean score: 0.99
+sigma score: 0.01
+mean norm: 9.87
+sigma norm: 0.93
