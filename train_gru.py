@@ -16,7 +16,7 @@ from serifs.utils.vectorizer import SELFIESVectorizer
 
 def main(config_path):
     """
-    Training script for model with variational encoder and GRU decoder
+    Training script for model with fully-connected encoder and GRU decoder
     """
     NUM_WORKERS = 3  # number of workers for dataloader
 
