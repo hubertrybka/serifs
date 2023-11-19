@@ -21,6 +21,11 @@ SELFIES-based Recurrent Neural Network for Interpretation of Fingerprint Space (
       conda activate mldd
 
 ### Prepare the dataset: 
+
+Please note that a dataset od D2 receptor ligands we used in our paper is available to be downloaded from our [dropbox](https://www.dropbox.com/scl/fo/o7pd38t8gnfoz9reqp7ot/h?rlkey=r2dh1sxrnt34bueza4snxn74b&dl=0) or by launching 
+      
+      ./get_datasets.sh
+
 In order to reatrain the latent classifier, you have to provide an appropriate dataset. Put the data into pandas.DataFrame object. The dataframe must contain the following columns:  
       
 * 'smiles' - SMILES strings of known ligands in canonical format.  
@@ -45,7 +50,7 @@ df.to_parquet(f'data/activity_data/{name}.parquet', index=False)
 ### Train the RNN decoder
 
 (Advanced) This step can be omitted and you can use pretrained models. Model weights, as well as datasets needed for training, 
-are available on [dropbox](https://www.dropbox.com/sh/7sop2qzz4n38o06/AAA1QXeD3cXO__02RnmsVV-Aa?dl=0) and can be batch downloaded using `get_datasets.sh` No more steps are needed to use 
+are available on [dropbox](https://www.dropbox.com/scl/fo/o7pd38t8gnfoz9reqp7ot/h?rlkey=r2dh1sxrnt34bueza4snxn74b&dl=0) and can be batch downloaded using `get_datasets.sh` No more steps are needed to use 
 the pretrained model.
 
 If you intend train the RNN, use the following command:
@@ -164,6 +169,6 @@ As a result, in results/SVC_{timestamp} dir, a new directory preds_{new_timestam
   ~1M subset of compounds with molecular mass in range of 200-450 Da, with no RO5 violations.
 * ZINC-250k
 
-  Datasets are available on [dropbox](https://www.dropbox.com/sh/7sop2qzz4n38o06/AAA1QXeD3cXO__02RnmsVV-Aa?dl=0) in .parquet format
+  Datasets are available on [dropbox](https://www.dropbox.com/scl/fo/o7pd38t8gnfoz9reqp7ot/h?rlkey=r2dh1sxrnt34bueza4snxn74b&dl=0)
   and can be batch downloaded using `get_datasets.sh`
 
