@@ -42,14 +42,16 @@ df.to_parquet(f'data/activity_data/{name}.parquet', index=False)
 ```
 ### Train the RNN decoder
 
-This step can be omitted if you want to use the pretrained model. Model weights, as well as datasets needed for training, 
-are available on [dropbox](https://www.dropbox.com/sh/7sop2qzz4n38o06/AAA1QXeD3cXO__02RnmsVV-Aa?dl=0) and can be batch 
-downloaded using `get_datasets.sh` No more steps are needed to use the pretrained model.
+(Advanced) This step can be omitted and you can use pretrained models. Model weights, as well as datasets needed for training, 
+are available on [dropbox](https://www.dropbox.com/sh/7sop2qzz4n38o06/AAA1QXeD3cXO__02RnmsVV-Aa?dl=0) and can be batch downloaded using `get_datasets.sh` No more steps are needed to use 
+the pretrained model.
 
 If you intend train the RNN, use the following command:
 
     python train_gru.py
 
+Be sure to edit the config file in advance (config_files/train_config.ini) to set the desired parameters.
+```
 
 ### Encode the dataset into latent space representations and train the activity predictor.
 Use the following command:
