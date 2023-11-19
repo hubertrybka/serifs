@@ -149,7 +149,7 @@ Other parameters can be set using the command line arguments:
 -v VERBOSITY, --verbosity VERBOSITY
                   Verbosity level (0 - silent, 1 - progress, 2 - verbose)
 -u USE_CUDA, --use_cuda USE_CUDA
-                  Use CUDA if available (default: True)
+                  Use CUDA if available (default: False)
 ```
 
 As a result, in results/SVC_{timestamp} dir, a new directory preds_{new_timestamp} will be created. This contains the following files:
