@@ -26,7 +26,7 @@ Please note that a dataset od D2 receptor ligands we used in our paper is availa
       
       get_datasets.sh
 
-It is advised do download all the files at once using this command, as it automatically puts them in appropriate catalogs.
+It is advised to use this script, as it automatically download all saved datasetsa and model wights, and puts them in appropriate catalogs.
 
 In order to reatrain the latent classifier, you have to provide an appropriate dataset. Put the data into pandas.DataFrame object. The dataframe must contain the following columns:  
       
