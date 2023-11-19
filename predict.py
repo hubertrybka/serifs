@@ -68,7 +68,6 @@ def main(file_path, model_path, config_path, n_samples, use_cuda, verbosity):
                               input_vector,
                               n_samples=n_samples,
                               device=device,
-                              fix_mols=config['SUBSTRUCTURE_FIX'].getboolean('apply')
                               )
 
     # filter dataframe
