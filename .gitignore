@@ -38,8 +38,12 @@ models/GRUv3_klek/epoch_120.pt
 models/GRUv3_klek/epoch_110.pt
 models/GRUv3_klek/epoch_100.pt
 models/GRUv3_klek/epoch_10.pt
-data/train_data/RNN_dataset_ECFP.parquet
+data/RNN_dataset_ECFP.parquet
 data/train_data/big_dataset_ECFP_train_90.parquet
 data/train_data/big_dataset_ECFP_val_10.parquet
-data/train_data/RNN_dataset_KRFP.parquet
+data/RNN_dataset_KRFP.parquet
 data/train_data/big_dataset_std_val_10.parquet
+/data/RNN_dataset_KRFP.parquet
+/data/RNN_dataset_ECFP.parquet
+/data/d2_ECFP_100nM_std.parquet
+/data/d2_klek_100nM_std.parquet

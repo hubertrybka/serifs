@@ -5,7 +5,7 @@ import torch
 from serifs.gen.generator import EncoderDecoderV3
 
 
-def initialize_model(config_path, dropout, device='cpu'):
+def initialize_model(config_path, dropout, device=torch.device('cpu')):
     """
     Initialize model from a given path
     Args:
@@ -17,7 +17,7 @@ def initialize_model(config_path, dropout, device='cpu'):
     """
     config = configparser.ConfigParser()
     config.read(config_path)
-    torch_device = torch.device('cuda' if torch.cuda.is_available() and device == 'cuda' else 'cpu')
+    torch_device = device
     model = EncoderDecoderV3(fp_size=int(config['MODEL']['fp_len']),
                              encoding_size=int(config['MODEL']['encoding_size']),
                              hidden_size=int(config['MODEL']['hidden_size']),

@@ -102,10 +102,6 @@ def main(config_path):
         encoder_activation=encoder_activation
     ).to(device)
 
-    if checkpoint_path.lower() != 'none':
-        model.load_state_dict(torch.load(checkpoint_path, map_location=device))
-    elif encoder_path.lower() != 'none':
-        model.encoder.load_state_dict(torch.load(encoder_path, map_location=device))
     _ = train(config, model, train_loader, val_loader, scoring_loader)
     return None
 
