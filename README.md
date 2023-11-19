@@ -1,5 +1,7 @@
-# Fragments from the known ligands as a source of building blocks for enumeration of new target-focused compound libraries supported by deep learning algoritms
-## Authors: Hubert Rybka, Mateusz Iwan, Anton Siomchen
+# SERIFS: design of target-focused libraries by exploring active ligand subspaces encoded with fingerprints
+
+## Authors: Hubert Rybka, Mateusz Iwan, Anton Siomchen, Tomasz Danel, Sabina Smusz
+
 ## Table of contents
 * [General info](#general-info)
 * [Setup](#setup)
@@ -7,7 +9,7 @@
 * [Data sources and tools](#data-sources-and-tools)
 
 ## General info
-(W.I.P.)
+SELFIES-based Recurrent Neural Network for Interpretation of Fingerprint Space (SERIFS) is novel generative model for construction of target-specific compound libraries. The proposed model functions as a variational autoencoder, encoding molecular fingerprints into compact, 32-dimensional latent space, which can be processed by a predicive search algorithm to identify subspaces of compunds with high biological activity. The model is then capable of decoding the latent space into SELFIES strings with the use of a GRU-based decoder, which enables us to generate libraries far considered biological target. User is able to retrain the latent classifier in order to conduct search on the latent space and generate compounds libraries matching the fingerprint profile of provided training data. A detailed uder manual is attached below. SERIFS is provided under MIT license.
 
 ## Setup
 1. Install [miniconda](https://docs.conda.io/en/latest/miniconda.html) following the instructions for your operating system.
@@ -19,9 +21,9 @@
       conda activate mldd
 
 ### Prepare the dataset: 
-Put the data into pandas.DataFrame object. The dataframe must contain the following columns:  
+In order to reatrain the latent classifier, you have to provide an appropriate dataset. Put the data into pandas.DataFrame object. The dataframe must contain the following columns:  
       
-* 'smiles' - SMILES strings of known ligands.  
+* 'smiles' - SMILES strings of known ligands in canonical format.  
       
 * 'fps' - Klekota&Roth or Morgan (radius=2, nBits=2048) fingerprints of the ligands.  
         The fingerprints have to be saved as ordinary pthon lists, in **dense format** (a list of ints designating the indices of **active bits** in the original fingerprint).
@@ -51,18 +53,18 @@ If you intend train the RNN, use the following command:
     python train_gru.py
 
 Be sure to edit the config file in advance (config_files/train_config.ini) to set the desired parameters.
-```
+Model weigthts and training progress will be saved to models/model_name.
 
-### Encode the dataset into latent space representations and train the activity predictor.
+### Train the SVC activity predictor.
 Use the following command:
   
     python train_clf.py
 
-Be sure to provide the path to the dataset file (prepared as explained above) using the -d (--data_path) flag.
+Be sure to provide  path to the dataset file (prepared as explained above) using the -d (--data_path) flag.
 Other parameters are optional and can be set using command line arguments.
 ```
 --data_path DATA_PATH, -d DATA_PATH  
-                        Path to data file (prepared as described in above)
+                        Path to data file (prepared as described in above section)
 --c_param C_PARAM, -c C_PARAM
                   C parameter for SVM (default: 50)
                   Commonly a float in the range [0.01, 100]
@@ -83,7 +85,7 @@ and save path to a model.pkl file created by the training script inside.
     
 It should look like this:
         
-    models/name_of_the_model/model.pkl
+    models/model_name/model.pkl
 
 ### Perform bayesian search on the latent space
   
@@ -96,7 +98,7 @@ To perform bayesian search on the latent space, use the following command:
 Be sure to provide the path to the model file using the -m (--model_path) flag, and the desired number of samples to be 
 generated using the -n (--n_samples) flag.
 
-    python bayesian_search.py -m models/name_of_the_model/model.pkl -n 1000
+    python bayesian_search.py -m models/model_name/model.pkl -n 1000
 
 Other parameters can be set using the command line arguments:
 ```
@@ -139,11 +141,11 @@ Other parameters can be set using the command line arguments:
                   Path to data file 
 -n N_SAMPLES, --n_samples N_SAMPLES
                   Number of samples to generate for each latent vector. If > 1, the variety of the generated
-                  molecules will be increased by using dropout.
+                  molecules will be increased by using dropout (default = 10)
 -c CONFIG, --config CONFIG
                   Path to config file (default: config_files/pred_config.ini)
 -m MODEL_PATH, --model_path MODEL_PATH
-                  Path to model weights
+                  Path to model weights (default: models/GRUv3_ECFP/epoch_150.pt)
 -v VERBOSITY, --verbosity VERBOSITY
                   Verbosity level (0 - silent, 1 - progress, 2 - verbose)
 -u USE_CUDA, --use_cuda USE_CUDA
