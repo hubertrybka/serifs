@@ -121,7 +121,7 @@ if __name__ == '__main__':
     parser.add_argument('-u',
                         '--use_cuda',
                         type=bool,
-                        default=True,
+                        default=False,
                         help='Use cuda if available')
 
     args = parser.parse_args()
