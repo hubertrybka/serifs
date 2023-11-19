@@ -22,9 +22,11 @@ SELFIES-based Recurrent Neural Network for Interpretation of Fingerprint Space (
 
 ### Prepare the dataset: 
 
-Please note that a dataset od D2 receptor ligands we used in our paper is available to be downloaded from our [dropbox](https://www.dropbox.com/scl/fo/o7pd38t8gnfoz9reqp7ot/h?rlkey=r2dh1sxrnt34bueza4snxn74b&dl=0) or by launching 
+Please note that a dataset od D2 receptor ligands we used in our paper is available to be downloaded from our [dropbox](https://www.dropbox.com/scl/fo/o7pd38t8gnfoz9reqp7ot/h?rlkey=r2dh1sxrnt34bueza4snxn74b&dl=0) or by launching:
       
       get_datasets.sh
+
+It is advised do download all the files at once using this command, as it automatically puts them in appropriate catalogs.
 
 In order to reatrain the latent classifier, you have to provide an appropriate dataset. Put the data into pandas.DataFrame object. The dataframe must contain the following columns:  
       
