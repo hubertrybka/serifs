@@ -18,36 +18,34 @@ def main(config_path):
     """
     Training script for model with fully-connected encoder and GRU decoder
     """
-    NUM_WORKERS = 3  # number of workers for dataloader
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print('Using device:', device)
     vectorizer = SELFIESVectorizer(pad_to_len=128)
 
-    train_size = 0.9
-    val_size = round(1 - train_size, 1)
-    train_percent = int(train_size * 100)
-    val_percent = int(val_size * 100)
-
     config = configparser.ConfigParser()
     config.read(config_path)
+    train_size = float(config['RUN']['train_size'])
+    random_seed = int(config['RUN']['random_seed'])
     run_name = str(config['RUN']['run_name'])
     batch_size = int(config['RUN']['batch_size'])
     data_path = str(config['RUN']['data_path'])
+    NUM_WORKERS = int(config['RUN']['num_workers'])
     smiles_enum = config.getboolean('RUN', 'smiles_enum')
-    model_type = str(config['MODEL']['model_type'])
     encoding_size = int(config['MODEL']['encoding_size'])
     hidden_size = int(config['MODEL']['hidden_size'])
     num_layers = int(config['MODEL']['num_layers'])
     dropout = float(config['MODEL']['dropout'])
     teacher_ratio = float(config['MODEL']['teacher_ratio'])
     fp_len = int(config['MODEL']['fp_len'])
-    encoder_path = str(config['MODEL']['encoder_path'])
-    checkpoint_path = str(config['MODEL']['checkpoint_path'])
     fc1_size = int(config['MODEL']['fc1_size'])
     fc2_size = int(config['MODEL']['fc2_size'])
     fc3_size = int(config['MODEL']['fc3_size'])
     encoder_activation = str(config['MODEL']['encoder_activation'])
+
+    val_size = round(1 - train_size, 1)
+    train_percent = int(train_size * 100)
+    val_percent = int(val_size * 100)
 
     dataset = pd.read_parquet(data_path)
 
@@ -61,14 +59,14 @@ def main(config_path):
     # if train_dataset not generated, perform scaffold split
     if (not os.path.isfile(data_path.split('.')[0] + f'_train_{train_percent}.parquet')
             or not os.path.isfile(data_path.split('.')[0] + f'_val_{val_percent}.parquet')):
-        train_df, val_df = scaffold_split(dataset, train_size, seed=42, shuffle=True)
+        train_df, val_df = scaffold_split(dataset, train_size, seed=random_seed, shuffle=True)
         train_df.to_parquet(data_path.split('.')[0] + f'_train_{train_percent}.parquet')
         val_df.to_parquet(data_path.split('.')[0] + f'_val_{val_percent}.parquet')
         print("Scaffold split complete")
     else:
         train_df = pd.read_parquet(data_path.split('.')[0] + f'_train_{train_percent}.parquet')
         val_df = pd.read_parquet(data_path.split('.')[0] + f'_val_{val_percent}.parquet')
-    scoring_df = val_df.sample(frac=0.1, random_state=42)
+    scoring_df = val_df.sample(frac=0.1, random_state=random_seed)
 
     train_dataset = GRUDataset(train_df, vectorizer, fp_len, smiles_enum=smiles_enum)
     val_dataset = GRUDataset(val_df, vectorizer, fp_len, smiles_enum=False)
@@ -90,23 +88,19 @@ def main(config_path):
                                 drop_last=True, num_workers=NUM_WORKERS)
 
     # Init model
-    if model_type == 'EncoderDecoderV3':
-        model = EncoderDecoderV3(
-            fp_size=fp_len,
-            encoding_size=encoding_size,
-            hidden_size=hidden_size,
-            num_layers=num_layers,
-            dropout=dropout,
-            teacher_ratio=teacher_ratio,
-            output_size=31,  # alphabet length
-            fc1_size=fc1_size,
-            fc2_size=fc2_size,
-            fc3_size=fc3_size,
-            encoder_activation=encoder_activation
-        ).to(device)
-
-    else:
-        raise ValueError('Invalid model type')
+    model = EncoderDecoderV3(
+        fp_size=fp_len,
+        encoding_size=encoding_size,
+        hidden_size=hidden_size,
+        num_layers=num_layers,
+        dropout=dropout,
+        teacher_ratio=teacher_ratio,
+        output_size=31,  # alphabet length
+        fc1_size=fc1_size,
+        fc2_size=fc2_size,
+        fc3_size=fc3_size,
+        encoder_activation=encoder_activation
+    ).to(device)
 
     if checkpoint_path.lower() != 'none':
         model.load_state_dict(torch.load(checkpoint_path, map_location=device))
@@ -121,7 +115,7 @@ if __name__ == '__main__':
     parser.add_argument('-c',
                         '--config',
                         type=str,
-                        default='gru_config0.ini',
+                        default='config_files/train_config.ini',
                         help='Path to config file')
     config_path = parser.parse_args().config
     main(config_path)
