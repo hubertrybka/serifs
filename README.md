@@ -2,7 +2,9 @@
 
 ## Authors: Hubert Rybka, Mateusz Iwan, Anton Siomchen, Tomasz Danel, Sabina Smusz
 
-![TOC](https://github.com/hubertrybka/serifs/blob/launch_prep/TOC.png)
+<p align="center">
+      <img src="/TOC.png" width="512">
+</p>
 
 ## Table of contents
 * [General info](#general-info)
