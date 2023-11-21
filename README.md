@@ -2,6 +2,8 @@
 
 ## Authors: Hubert Rybka, Mateusz Iwan, Anton Siomchen, Tomasz Danel, Sabina Smusz
 
+![TOC](https://github.com/hubertrybka/serifs/blob/launch_prep/TOC.png)
+
 ## Table of contents
 * [General info](#general-info)
 * [Setup](#setup)
