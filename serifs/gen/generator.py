@@ -16,29 +16,25 @@ class VAEEncoder(nn.Module):
         activation (str): activation function ('relu', 'elu', 'gelu' or 'leaky_relu')
     """
 
-    def __init__(self,
-                 input_size,
-                 output_size,
-                 fc1_size,
-                 fc2_size,
-                 fc3_size,
-                 activation='relu'):
+    def __init__(
+        self, input_size, output_size, fc1_size, fc2_size, fc3_size, activation="relu"
+    ):
         super(VAEEncoder, self).__init__()
         self.fc1 = nn.Linear(input_size, fc1_size)
         self.fc2 = nn.Linear(fc1_size, fc2_size)
         self.fc3 = nn.Linear(fc2_size, fc3_size)
         self.fc41 = nn.Linear(fc3_size, output_size)
         self.fc42 = nn.Linear(fc3_size, output_size)
-        if activation == 'relu':
+        if activation == "relu":
             self.relu = nn.ReLU()
-        elif activation == 'leaky_relu':
+        elif activation == "leaky_relu":
             self.relu = nn.LeakyReLU()
-        elif activation == 'elu':
+        elif activation == "elu":
             self.relu = nn.ELU()
-        elif activation == 'gelu':
+        elif activation == "gelu":
             self.relu = nn.GELU()
         else:
-            raise ValueError('Activation must be one of: relu, leaky_relu, elu, gelu')
+            raise ValueError("Activation must be one of: relu, leaky_relu, elu, gelu")
 
     def forward(self, x):
         """
@@ -57,7 +53,9 @@ class VAEEncoder(nn.Module):
 
     @staticmethod
     def kld_loss(mu, logvar):
-        kld = torch.mean(-0.5 * torch.sum(1 + logvar - mu ** 2 - logvar.exp(), dim=1), dim=0)
+        kld = torch.mean(
+            -0.5 * torch.sum(1 + logvar - mu**2 - logvar.exp(), dim=1), dim=0
+        )
         return kld
 
 
@@ -72,8 +70,17 @@ class GRUDecoder(nn.Module):
         dropout (float): GRU dropout
     """
 
-    def __init__(self, hidden_size, num_layers, output_size, dropout, input_size, encoding_size,
-                 teacher_ratio, device):
+    def __init__(
+        self,
+        hidden_size,
+        num_layers,
+        output_size,
+        dropout,
+        input_size,
+        encoding_size,
+        teacher_ratio,
+        device,
+    ):
         super(GRUDecoder, self).__init__()
 
         # GRU parameters
@@ -91,11 +98,13 @@ class GRUDecoder(nn.Module):
         self.start_ohe[output_size - 1] = 1.0  # start token
 
         # pytorch.nn
-        self.gru = nn.GRU(input_size=self.input_size,
-                          hidden_size=self.hidden_size,
-                          num_layers=self.num_layers,
-                          dropout=self.dropout,
-                          batch_first=True)
+        self.gru = nn.GRU(
+            input_size=self.input_size,
+            hidden_size=self.hidden_size,
+            num_layers=self.num_layers,
+            dropout=self.dropout,
+            batch_first=True,
+        )
         self.fc1 = nn.Linear(self.encoding_size, self.hidden_size)
         self.fc2 = nn.Linear(self.hidden_size, self.output_size)
         self.softmax = nn.Softmax(dim=2)
@@ -116,13 +125,17 @@ class GRUDecoder(nn.Module):
         latent_transformed = self.fc1(latent_vector)  # shape (batch_size, hidden_size)
 
         # initializing hidden state
-        hidden = torch.zeros(self.num_layers, batch_size, self.hidden_size).to(self.device)
+        hidden = torch.zeros(self.num_layers, batch_size, self.hidden_size).to(
+            self.device
+        )
         hidden[0] = latent_transformed.unsqueeze(0)
         hidden[1] = latent_transformed.unsqueeze(0)
         # shape (num_layers, batch_size, hidden_size)
 
         # initializing input (batched start token)
-        x = self.start_ohe.repeat(batch_size, 1).unsqueeze(1).to(self.device)  # shape (batch_size, 1, 42)
+        x = (
+            self.start_ohe.repeat(batch_size, 1).unsqueeze(1).to(self.device)
+        )  # shape (batch_size, 1, 42)
 
         # generating sequence
         outputs = []
@@ -132,9 +145,11 @@ class GRUDecoder(nn.Module):
             outputs.append(out)
             out = self.softmax(out)
             random_float = random.random()
-            if (teacher_forcing and
-                    random_float < self.teacher_ratio and
-                    y_true is not None):
+            if (
+                teacher_forcing
+                and random_float < self.teacher_ratio
+                and y_true is not None
+            ):
                 out = y_true[:, n, :].unsqueeze(1)  # shape (batch_size, 1, 31)
             x = out
         out_cat = torch.cat(outputs, dim=1)
@@ -162,25 +177,39 @@ class EncoderDecoderV3(nn.Module):
         encoder_activation (str): activation function for the encoder ('relu', 'elu', 'gelu' or 'leaky_relu')
     """
 
-    def __init__(self, fp_size, encoding_size, hidden_size, num_layers, output_size, dropout,
-                 teacher_ratio, random_seed=42, use_cuda=True, fc1_size=2048, fc2_size=1024, fc3_size=512,
-                 encoder_activation='relu'):
+    def __init__(
+        self,
+        fp_size,
+        encoding_size,
+        hidden_size,
+        num_layers,
+        output_size,
+        dropout,
+        teacher_ratio,
+        random_seed=42,
+        use_cuda=True,
+        fc1_size=2048,
+        fc2_size=1024,
+        fc3_size=512,
+        encoder_activation="relu",
+    ):
         super(EncoderDecoderV3, self).__init__()
         self.fp_size = fp_size
-        self.encoder = VAEEncoder(fp_size,
-                                  encoding_size,
-                                  fc1_size,
-                                  fc2_size,
-                                  fc3_size,
-                                  encoder_activation)
-        self.decoder = GRUDecoder(hidden_size,
-                                  num_layers,
-                                  output_size,
-                                  dropout,
-                                  input_size=output_size,
-                                  teacher_ratio=teacher_ratio,
-                                  encoding_size=encoding_size,
-                                  device=torch.device('cuda' if (use_cuda and torch.cuda.is_available()) else 'cpu'))
+        self.encoder = VAEEncoder(
+            fp_size, encoding_size, fc1_size, fc2_size, fc3_size, encoder_activation
+        )
+        self.decoder = GRUDecoder(
+            hidden_size,
+            num_layers,
+            output_size,
+            dropout,
+            input_size=output_size,
+            teacher_ratio=teacher_ratio,
+            encoding_size=encoding_size,
+            device=torch.device(
+                "cuda" if (use_cuda and torch.cuda.is_available()) else "cpu"
+            ),
+        )
         random.seed(random_seed)
 
     def forward(self, X, y, teacher_forcing=False, omit_encoder=False):
@@ -201,9 +230,13 @@ class EncoderDecoderV3(nn.Module):
         else:
             mu, logvar = self.encoder(X)
             kld_loss = self.encoder.kld_loss(mu, logvar)
-            encoded = self.reparameterize(mu, logvar)  # shape (batch_size, encoding_size)
+            encoded = self.reparameterize(
+                mu, logvar
+            )  # shape (batch_size, encoding_size)
 
-        decoded = self.decoder(latent_vector=encoded, y_true=y, teacher_forcing=teacher_forcing)
+        decoded = self.decoder(
+            latent_vector=encoded, y_true=y, teacher_forcing=teacher_forcing
+        )
         # shape (batch_size, selfie_len, alphabet_len)
 
         return decoded, kld_loss  # out_cat.shape (batch_size, selfie_len, alphabet_len)

@@ -27,16 +27,20 @@ class SELFIESVectorizer:
         if no_special:
             splited = self.split_selfi(selfie)
         elif self.pad_to_len is None:
-            splited = ['[start]'] + self.split_selfi(selfie) + ['[end]']
+            splited = ["[start]"] + self.split_selfi(selfie) + ["[end]"]
         else:
-            splited = ['[start]'] + self.split_selfi(selfie) + ['[end]'] \
-                      + ['[nop]'] * (self.pad_to_len - len(self.split_selfi(selfie)) - 2)
+            splited = (
+                ["[start]"]
+                + self.split_selfi(selfie)
+                + ["[end]"]
+                + ["[nop]"] * (self.pad_to_len - len(self.split_selfi(selfie)) - 2)
+            )
         X = np.zeros((len(splited), len(self.alphabet)))
         for i in range(len(splited)):
             X[i, self.char2idx[splited[i]]] = 1
         return X
 
-    def devectorize(self, ohe, remove_special=False, reduction='max'):
+    def devectorize(self, ohe, remove_special=False, reduction="max"):
         """
         Devectorize a numpy array of shape (len(selfies), len(charset)) to a SELFIES string
         Args:
@@ -46,15 +50,17 @@ class SELFIESVectorizer:
         Returns:
             selfie_str (string): SELFIES string
         """
-        selfie_str = ''
+        selfie_str = ""
         for j in range(ohe.shape[0]):
-            if reduction == 'max':
+            if reduction == "max":
                 idx = np.argmax(ohe[j, :])
-            elif reduction == 'sample':
+            elif reduction == "sample":
                 idx = np.random.choice(np.arange(len(self.alphabet)), p=ohe[j, :])
             else:
                 raise ValueError('Reduction must be either "max" or "sample"')
-            if remove_special and (self.idx2char[idx] == '[start]' or self.idx2char[idx] == '[end]'):
+            if remove_special and (
+                self.idx2char[idx] == "[start]" or self.idx2char[idx] == "[end]"
+            ):
                 continue
             selfie_str += self.idx2char[idx]
         return selfie_str
@@ -63,8 +69,12 @@ class SELFIESVectorizer:
         if no_special:
             splited = self.split_selfi(selfie)
         else:
-            splited = ['[start]'] + self.split_selfi(selfie) + ['[end]'] \
-                      + ['[nop]'] * (self.pad_to_len - len(self.split_selfi(selfie)) - 2)
+            splited = (
+                ["[start]"]
+                + self.split_selfi(selfie)
+                + ["[end]"]
+                + ["[nop]"] * (self.pad_to_len - len(self.split_selfi(selfie)) - 2)
+            )
         return np.array([self.char2idx[s] for s in splited])
 
     def deidxize(self, idx, no_special=False):
@@ -72,7 +82,7 @@ class SELFIESVectorizer:
             selfie = []
             for i in idx:
                 char = self.idx2char[i]
-                if char not in ['[end]', '[nop]', '[start]']:
+                if char not in ["[end]", "[nop]", "[start]"]:
                     selfie.append(char)
             return "".join(selfie)
         else:
@@ -80,13 +90,13 @@ class SELFIESVectorizer:
 
     @staticmethod
     def split_selfi(selfie):
-        pattern = r'(\[[^\[\]]*\])'
+        pattern = r"(\[[^\[\]]*\])"
         return re.findall(pattern, selfie)
 
     # Read alphabet of permitted SELFIES tokens from file
 
     @staticmethod
     def read_alphabet():
-        with open('data/alphabet.txt', 'r') as f:
+        with open("data/alphabet.txt", "r") as f:
             alphabet = f.read().splitlines()
         return alphabet

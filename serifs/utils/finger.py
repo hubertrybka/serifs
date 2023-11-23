@@ -10,7 +10,7 @@ from serifs.gen.dataset import VAEDataset
 
 def smiles2sparse(smiles):
     mol = Chem.MolFromSmiles(smiles)
-    keys = 'data/KlekFP_keys.txt'
+    keys = "data/KlekFP_keys.txt"
     klek_keys = [line.strip() for line in open(keys)]
     klek_keys_mols = list(map(Chem.MolFromSmarts, klek_keys))
     fp_list = []
@@ -24,7 +24,7 @@ def smiles2sparse(smiles):
 
 def smiles2dense(smiles):
     mol = Chem.MolFromSmiles(smiles)
-    keys = 'data/KlekFP_keys.txt'
+    keys = "data/KlekFP_keys.txt"
     klek_keys = [line.strip() for line in open(keys)]
     klek_keys_mols = list(map(Chem.MolFromSmarts, klek_keys))
     fp_list = []
