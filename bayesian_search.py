@@ -32,11 +32,13 @@ def search(config_path, return_list):
         None
     """
 
+    # read config file
+
     config = configparser.ConfigParser(allow_no_value=True)
     config.read(config_path)
     model_path = config['SEARCH']['model_path']
     latent_size = int(config['SEARCH']['latent_size'])
-    init_points = int(config['SEARCH']['init_points'])
+    n_init = int(config['SEARCH']['n_init'])
     n_iter = int(config['SEARCH']['n_iter'])
     bounds = float(config['SEARCH']['bounds'])
     verbosity = int(config['SEARCH']['verbosity'])
@@ -64,7 +66,7 @@ def search(config_path, return_list):
 
     # run optimization:
     optimizer.maximize(
-        init_points=init_points,
+        init_points=n_init,
         n_iter=n_iter,
     )
     vector = np.array(list(optimizer.max['params'].values()))
@@ -73,6 +75,7 @@ def search(config_path, return_list):
     vector_list.append(vector)
 
     # append results to return list
+
     samples = pd.DataFrame(np.array(vector_list))
     samples.columns = [str(n) for n in range(latent_size)]
     samples['score'] = score_list
@@ -99,7 +102,7 @@ if __name__ == '__main__':
     n_workers = int(config['SEARCH']['n_workers'])
     verbosity = int(config['SEARCH']['verbosity'])
     n_samples = int(config['SEARCH']['n_samples'])
-    init_points = int(config['SEARCH']['init_points'])
+    n_init = int(config['SEARCH']['n_init'])
     n_iter = int(config['SEARCH']['n_iter'])
     bounds = float(config['SEARCH']['bounds'])
     latent_size = int(config['SEARCH']['latent_size'])
@@ -115,12 +118,13 @@ if __name__ == '__main__':
     else:
         cpus = cpu_cores
 
+    print(f"Bayesian search started succesfully") if verbosity > 0 else None
     print("Number of workers: ", cpus) if verbosity > 0 else None
 
     queue = queue.Queue()
 
     for i in range(n_samples):
-        proc = mp.Process(target=search, args=[init_points, n_iter, verbosity, return_list])
+        proc = mp.Process(target=search, args=[config_path, return_list])
         queue.put(proc)
 
     print('(mp) Processes in queue: ', queue.qsize()) if verbosity > 0 else None
@@ -168,21 +172,22 @@ if __name__ == '__main__':
 
     # save the results
     timestamp = time.strftime("%Y%m%d_%H%M%S")
-    receptor = model_path.split('/')[-1].split('.')[-2]
-    model_name = receptor + '_SVC_' + timestamp
+    model_name = 'bayesian_search_' + timestamp
 
     # create results directory
-    os.mkdir(f'results/{model_name}')
+    os.mkdir(f'outputs/{model_name}')
 
     # save the results
-    samples.to_csv(f'results/{model_name}/latent_vectors.csv', index=False)
+    samples.to_csv(f'outputs/{model_name}/latent_vectors.csv', index=False)
+
+    print(f"Results saved to: outputs/{model_name}") if verbosity > 0 else None
 
     # save the arguments
-    with open(f'results/{model_name}/info.txt', 'w') as f:
+    with open(f'outputs/{model_name}/info.txt', 'w') as f:
         text = [f'model_path: {model_path}',
                 f'latent_size: {latent_size}',
                 f'n_samples: {n_samples}',
-                f'init_points: {init_points}',
+                f'init_points: {n_init}',
                 f'n_iter: {n_iter}',
                 f'bounds: {bounds}',
                 f'verbosity: {verbosity}',
