@@ -26,83 +26,92 @@ def main(config_path):
     # get config
     config = configparser.ConfigParser(allow_no_value=True)
     config.read(config_path)
-    file_path = config['RUN']['data_path']
-    model_path = config['RUN']['model_path']
-    n_samples = int(config['RUN']['n_samples'])
-    use_cuda = config['RUN'].getboolean('use_cuda')
-    verbosity = int(config['RUN']['verbosity'])
+    file_path = config["RUN"]["data_path"]
+    model_path = config["RUN"]["model_path"]
+    n_samples = int(config["RUN"]["n_samples"])
+    use_cuda = config["RUN"].getboolean("use_cuda")
+    verbosity = int(config["RUN"]["verbosity"])
 
-    device = torch.device('cuda' if torch.cuda.is_available() and use_cuda else 'cpu')
+    device = torch.device("cuda" if torch.cuda.is_available() and use_cuda else "cpu")
 
     # get file name
     dirname = os.path.dirname(file_path)
     timestamp = time.strftime("%Y%m%d-%H%M%S")
 
-    print(f'Using {device} device') if verbosity > 0 else None
+    print(f"Using {device} device") if verbosity > 0 else None
 
-    model_epoch = model_path.split('/')[-1]
-    model_config_path = model_path.replace(model_epoch, 'hyperparameters.ini')
+    model_epoch = model_path.split("/")[-1]
+    model_config_path = model_path.replace(model_epoch, "hyperparameters.ini")
     if not os.path.exists(model_config_path):
-        raise ValueError(f'Model config file {model_config_path} not found')
+        raise ValueError(f"Model config file {model_config_path} not found")
 
     # load model
 
-    model = initialize_model(config_path=model_config_path,
-                             dropout=True if n_samples > 1 else False,
-                             device=device)
+    model = initialize_model(
+        config_path=model_config_path,
+        dropout=True if n_samples > 1 else False,
+        device=device,
+    )
     model.load_state_dict(torch.load(model_path, map_location=device))
-    print(f'Loaded model from {model_path}') if verbosity > 1 else None
+    print(f"Loaded model from {model_path}") if verbosity > 1 else None
 
     # load data
-    if file_path.endswith('.csv'):
+    if file_path.endswith(".csv"):
         query_df = pd.read_csv(file_path)
-    elif file_path.endswith('.parquet'):
+    elif file_path.endswith(".parquet"):
         query_df = pd.read_parquet(file_path)
     else:
-        raise ValueError('Data file format not supported (must be .csv or .parquet)')
+        raise ValueError("Data file format not supported (must be .csv or .parquet)")
 
-    for col in ['smiles', 'label', 'score', 'activity', 'norm']:
+    for col in ["smiles", "label", "score", "activity", "norm"]:
         if col in query_df.columns:
             query_df = query_df.drop(columns=[col])
     input_vector = query_df.to_numpy()
-    print(f'Loaded data from {file_path}') if verbosity > 1 else None
+    print(f"Loaded data from {file_path}") if verbosity > 1 else None
 
     # get predictions
-    print(f'Getting predictions for file {file_path}...') if verbosity > 1 else None
-    df = predict_with_dropout(model,
-                              input_vector,
-                              n_samples=n_samples,
-                              device=device,
-                              )
+    print(f"Getting predictions for file {file_path}...") if verbosity > 1 else None
+    df = predict_with_dropout(
+        model,
+        input_vector,
+        n_samples=n_samples,
+        device=device,
+    )
 
     # filter dataframe
     df = filter_dataframe(df, config)
 
     # save data as csv
-    os.mkdir(f'{dirname}/preds_{timestamp}')
-    with open(f'{dirname}/preds_{timestamp}/config.ini', 'w') as configfile:
+    os.mkdir(f"{dirname}/preds_{timestamp}")
+    with open(f"{dirname}/preds_{timestamp}/config.ini", "w") as configfile:
         config.write(configfile)
-    df.to_csv(f'{dirname}/preds_{timestamp}/predictions.csv', index=False)
+    df.to_csv(f"{dirname}/preds_{timestamp}/predictions.csv", index=False)
 
-    print(f'Saved data to {dirname}/preds_{timestamp} directory') if verbosity > 0 else None
+    print(
+        f"Saved data to {dirname}/preds_{timestamp} directory"
+    ) if verbosity > 0 else None
 
     # save images
-    os.mkdir(f'{dirname}/preds_{timestamp}/imgs')
-    for n, (idx, smiles) in enumerate(zip(df['idx'], df['smiles'])):
+    os.mkdir(f"{dirname}/preds_{timestamp}/imgs")
+    for n, (idx, smiles) in enumerate(zip(df["idx"], df["smiles"])):
         mol = Chem.MolFromSmiles(smiles)
-        Draw.MolToFile(mol, f'{dirname}/preds_{timestamp}/imgs/{idx}_{n}.png', size=(300, 300))
+        Draw.MolToFile(
+            mol, f"{dirname}/preds_{timestamp}/imgs/{idx}_{n}.png", size=(300, 300)
+        )
 
     time_elapsed = time.time() - start_time
-    print(f'File processed in {(time_elapsed / 60):.2f} minutes')
+    print(f"File processed in {(time_elapsed / 60):.2f} minutes")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config',
-                        '-c',
-                        type=str,
-                        default='config_files/pred_config.ini',
-                        help='Path to config file')
+    parser.add_argument(
+        "--config",
+        "-c",
+        type=str,
+        default="config_files/pred_config.ini",
+        help="Path to config file",
+    )
 
     args = parser.parse_args()
     config_path = args.config

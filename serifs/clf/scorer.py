@@ -14,7 +14,7 @@ class SKLearnScorer:
             path: path to the saved model
             penalize: if True, penalize for values outside of bounds
         """
-        with open(path, 'rb') as file:
+        with open(path, "rb") as file:
             self.model = pickle.load(file)
         self.penalize = penalize
 

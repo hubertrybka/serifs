@@ -23,32 +23,32 @@ def main(config_path):
 
     config = configparser.ConfigParser()
     config.read(config_path)
-    train_size = float(config['RUN']['train_size'])
-    random_seed = int(config['RUN']['random_seed'])
-    run_name = str(config['RUN']['run_name'])
-    batch_size = int(config['RUN']['batch_size'])
-    data_path = str(config['RUN']['data_path'])
-    NUM_WORKERS = int(config['RUN']['num_workers'])
-    encoding_size = int(config['MODEL']['encoding_size'])
-    hidden_size = int(config['MODEL']['hidden_size'])
-    num_layers = int(config['MODEL']['num_layers'])
-    dropout = float(config['MODEL']['dropout'])
-    teacher_ratio = float(config['MODEL']['teacher_ratio'])
-    fp_len = int(config['MODEL']['fp_len'])
-    fc1_size = int(config['MODEL']['fc1_size'])
-    fc2_size = int(config['MODEL']['fc2_size'])
-    fc3_size = int(config['MODEL']['fc3_size'])
-    encoder_activation = str(config['MODEL']['encoder_activation'])
-    use_cuda = config.getboolean('RUN', 'use_cuda')
+    train_size = float(config["RUN"]["train_size"])
+    random_seed = int(config["RUN"]["random_seed"])
+    run_name = str(config["RUN"]["run_name"])
+    batch_size = int(config["RUN"]["batch_size"])
+    data_path = str(config["RUN"]["data_path"])
+    NUM_WORKERS = int(config["RUN"]["num_workers"])
+    encoding_size = int(config["MODEL"]["encoding_size"])
+    hidden_size = int(config["MODEL"]["hidden_size"])
+    num_layers = int(config["MODEL"]["num_layers"])
+    dropout = float(config["MODEL"]["dropout"])
+    teacher_ratio = float(config["MODEL"]["teacher_ratio"])
+    fp_len = int(config["MODEL"]["fp_len"])
+    fc1_size = int(config["MODEL"]["fc1_size"])
+    fc2_size = int(config["MODEL"]["fc2_size"])
+    fc3_size = int(config["MODEL"]["fc3_size"])
+    encoder_activation = str(config["MODEL"]["encoder_activation"])
+    use_cuda = config.getboolean("RUN", "use_cuda")
 
     val_size = round(1 - train_size, 1)
     train_percent = int(train_size * 100)
     val_percent = int(val_size * 100)
 
-    cuda_available = (torch.cuda.is_available() and use_cuda)
-    device = torch.device('cuda' if cuda_available else 'cpu')
+    cuda_available = torch.cuda.is_available() and use_cuda
+    device = torch.device("cuda" if cuda_available else "cpu")
 
-    print('Using device:', device)
+    print("Using device:", device)
 
     vectorizer = SELFIESVectorizer(pad_to_len=128)
 
@@ -58,23 +58,30 @@ def main(config_path):
 
     # create a directory for this model weights if not there
 
-    if not os.path.isdir(f'models/{run_name}'):
-        os.mkdir(f'models/{run_name}')
+    if not os.path.isdir(f"models/{run_name}"):
+        os.mkdir(f"models/{run_name}")
 
-    with open(f'models/{run_name}/hyperparameters.ini', 'w') as configfile:
+    with open(f"models/{run_name}/hyperparameters.ini", "w") as configfile:
         config.write(configfile)
 
     # if train_dataset not generated, perform scaffold split
 
-    if (not os.path.isfile(data_path.split('.')[0] + f'_train_{train_percent}.parquet')
-            or not os.path.isfile(data_path.split('.')[0] + f'_val_{val_percent}.parquet')):
-        train_df, val_df = scaffold_split(dataset, train_size, seed=random_seed, shuffle=True)
-        train_df.to_parquet(data_path.split('.')[0] + f'_train_{train_percent}.parquet')
-        val_df.to_parquet(data_path.split('.')[0] + f'_val_{val_percent}.parquet')
+    if not os.path.isfile(
+        data_path.split(".")[0] + f"_train_{train_percent}.parquet"
+    ) or not os.path.isfile(data_path.split(".")[0] + f"_val_{val_percent}.parquet"):
+        train_df, val_df = scaffold_split(
+            dataset, train_size, seed=random_seed, shuffle=True
+        )
+        train_df.to_parquet(data_path.split(".")[0] + f"_train_{train_percent}.parquet")
+        val_df.to_parquet(data_path.split(".")[0] + f"_val_{val_percent}.parquet")
         print("Scaffold split complete")
     else:
-        train_df = pd.read_parquet(data_path.split('.')[0] + f'_train_{train_percent}.parquet')
-        val_df = pd.read_parquet(data_path.split('.')[0] + f'_val_{val_percent}.parquet')
+        train_df = pd.read_parquet(
+            data_path.split(".")[0] + f"_train_{train_percent}.parquet"
+        )
+        val_df = pd.read_parquet(
+            data_path.split(".")[0] + f"_val_{val_percent}.parquet"
+        )
     scoring_df = val_df.sample(frac=0.1, random_state=random_seed)
 
     # prepare dataloaders
@@ -89,14 +96,31 @@ def main(config_path):
     print("Scoring size:", len(scoring_dataset))
 
     val_batch_size = batch_size if batch_size < len(val_dataset) else len(val_dataset)
-    scoring_batch_size = batch_size if batch_size < len(scoring_dataset) else len(scoring_dataset)
+    scoring_batch_size = (
+        batch_size if batch_size < len(scoring_dataset) else len(scoring_dataset)
+    )
 
-    train_loader = DataLoader(train_dataset, shuffle=True, batch_size=batch_size,
-                              drop_last=True, num_workers=NUM_WORKERS)
-    val_loader = DataLoader(val_dataset, shuffle=False, batch_size=val_batch_size,
-                            drop_last=True, num_workers=NUM_WORKERS)
-    scoring_loader = DataLoader(scoring_dataset, shuffle=False, batch_size=scoring_batch_size,
-                                drop_last=True, num_workers=NUM_WORKERS)
+    train_loader = DataLoader(
+        train_dataset,
+        shuffle=True,
+        batch_size=batch_size,
+        drop_last=True,
+        num_workers=NUM_WORKERS,
+    )
+    val_loader = DataLoader(
+        val_dataset,
+        shuffle=False,
+        batch_size=val_batch_size,
+        drop_last=True,
+        num_workers=NUM_WORKERS,
+    )
+    scoring_loader = DataLoader(
+        scoring_dataset,
+        shuffle=False,
+        batch_size=scoring_batch_size,
+        drop_last=True,
+        num_workers=NUM_WORKERS,
+    )
 
     # Init model
 
@@ -111,19 +135,21 @@ def main(config_path):
         fc1_size=fc1_size,
         fc2_size=fc2_size,
         fc3_size=fc3_size,
-        encoder_activation=encoder_activation
+        encoder_activation=encoder_activation,
     ).to(device)
 
     _ = train(config, model, train_loader, val_loader, scoring_loader)
     return None
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c',
-                        '--config',
-                        type=str,
-                        default='config_files/RNN_config.ini',
-                        help='Path to config file')
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=str,
+        default="config_files/RNN_config.ini",
+        help="Path to config file",
+    )
     config_path = parser.parse_args().config
     main(config_path)

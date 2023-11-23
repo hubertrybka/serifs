@@ -16,29 +16,33 @@ def train(config, model, train_loader, val_loader, scoring_loader):
     Training loop for the model consisting of a VAE encoder and GRU decoder
     """
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    epochs = int(config['RUN']['epochs'])
-    run_name = str(config['RUN']['run_name'])
-    learn_rate = float(config['RUN']['learn_rate'])
-    kld_backward = config.getboolean('RUN', 'kld_backward')
-    start_epoch = int(config['RUN']['start_epoch'])
-    kld_weight = float(config['RUN']['kld_weight'])
-    kld_annealing = config.getboolean('RUN', 'kld_annealing')
-    annealing_max_epoch = int(config['RUN']['annealing_max_epoch'])
-    annealing_shape = str(config['RUN']['annealing_shape'])
+    epochs = int(config["RUN"]["epochs"])
+    run_name = str(config["RUN"]["run_name"])
+    learn_rate = float(config["RUN"]["learn_rate"])
+    kld_backward = config.getboolean("RUN", "kld_backward")
+    start_epoch = int(config["RUN"]["start_epoch"])
+    kld_weight = float(config["RUN"]["kld_weight"])
+    kld_annealing = config.getboolean("RUN", "kld_annealing")
+    annealing_max_epoch = int(config["RUN"]["annealing_max_epoch"])
+    annealing_shape = str(config["RUN"]["annealing_shape"])
 
     annealing_agent = Annealer(annealing_max_epoch, annealing_shape)
 
     # Define dataframe for logging progress
     epochs_range = range(start_epoch, epochs + start_epoch)
-    metrics = pd.DataFrame(columns=['epoch',
-                                    'kld_loss',
-                                    'kld_weighted',
-                                    'train_loss',
-                                    'val_loss',
-                                    'mean_qed',
-                                    'mean_fp_recon'])
+    metrics = pd.DataFrame(
+        columns=[
+            "epoch",
+            "kld_loss",
+            "kld_weighted",
+            "train_loss",
+            "val_loss",
+            "mean_qed",
+            "mean_fp_recon",
+        ]
+    )
 
     # Define loss function and optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate)
@@ -51,7 +55,7 @@ def train(config, model, train_loader, val_loader, scoring_loader):
     for epoch in epochs_range:
         model.train()
         start_time = time.time()
-        print(f'Epoch: {epoch}')
+        print(f"Epoch: {epoch}")
         epoch_loss = 0
         kld_loss = 0
         for X, y in train_loader:
@@ -77,19 +81,20 @@ def train(config, model, train_loader, val_loader, scoring_loader):
             start = time.time()
             mean_qed, mean_fp_recon = get_scores(model, scoring_loader)
             end = time.time()
-            print(f'QED + fp evaluated in {(end - start) / 60} minutes')
+            print(f"QED + fp evaluated in {(end - start) / 60} minutes")
         else:
             mean_qed = None
             mean_fp_recon = None
 
-        metrics_dict = {'epoch': epoch,
-                        'kld_loss': kld_loss.item(),
-                        'kld_weighted': kld_weighted.item(),
-                        'train_loss': avg_loss,
-                        'val_loss': val_loss,
-                        'mean_qed': mean_qed,
-                        'mean_fp_recon': mean_fp_recon
-                        }
+        metrics_dict = {
+            "epoch": epoch,
+            "kld_loss": kld_loss.item(),
+            "kld_weighted": kld_weighted.item(),
+            "train_loss": avg_loss,
+            "val_loss": val_loss,
+            "mean_qed": mean_qed,
+            "mean_fp_recon": mean_fp_recon,
+        }
 
         if kld_annealing:
             annealing_agent.step()
@@ -103,7 +108,7 @@ def train(config, model, train_loader, val_loader, scoring_loader):
         metrics.to_csv(f"./models/{run_name}/metrics.csv", index=False)
         end_time = time.time()
         loop_time = (end_time - start_time) / 60  # in minutes
-        print(f'Epoch {epoch} completed in {loop_time} minutes')
+        print(f"Epoch {epoch} completed in {loop_time} minutes")
 
     return None
 
@@ -118,7 +123,7 @@ def evaluate(model, val_loader):
         float: average loss on the validation set
 
     """
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.eval()
     with torch.no_grad():
         criterion = CCE()
@@ -145,7 +150,7 @@ def get_scores(model, scoring_loader):
         mean_fp_recon (float): average FP reconstruction score
 
     """
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     vectorizer = SELFIESVectorizer(pad_to_len=128)
     model.eval()
     with torch.no_grad():
@@ -155,8 +160,10 @@ def get_scores(model, scoring_loader):
             X = X.to(device)
             y = y.to(device)
             output, _ = model(X, y, teacher_forcing=False)
-            selfies_list = [vectorizer.devectorize(ohe.detach().cpu().numpy(),
-                                                   remove_special=True) for ohe in output]
+            selfies_list = [
+                vectorizer.devectorize(ohe.detach().cpu().numpy(), remove_special=True)
+                for ohe in output
+            ]
             smiles_list = [sf.decoder(x) for x in selfies_list]
             mol_list = [Chem.MolFromSmiles(x) for x in smiles_list]
 
@@ -190,7 +197,7 @@ def fp_score(mol, fp: torch.Tensor):
         score: float (0-1)
     """
     score = 0
-    key = pd.read_csv('data/KlekFP_keys.txt', header=None)
+    key = pd.read_csv("data/KlekFP_keys.txt", header=None)
     fp_len = fp.shape[0]
     for i in range(fp_len):
         if fp[i] == 1:

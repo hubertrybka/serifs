@@ -19,7 +19,7 @@ class Annealer:
         self.shape = shape
         self.baseline = baseline
         if disable:
-            self.shape = 'none'
+            self.shape = "none"
             self.baseline = 0.0
 
     def __call__(self, kld):
@@ -33,20 +33,22 @@ class Annealer:
         return out
 
     def slope(self):
-        if self.shape == 'linear':
-            y = (self.current_step / self.total_steps)
+        if self.shape == "linear":
+            y = self.current_step / self.total_steps
             y = self.add_baseline(y)
-        elif self.shape == 'cosine':
+        elif self.shape == "cosine":
             y = (math.cos(math.pi * (self.current_step / self.total_steps - 1)) + 1) / 2
             y = self.add_baseline(y)
-        elif self.shape == 'logistic':
-            exponent = ((self.total_steps / 2) - self.current_step)
+        elif self.shape == "logistic":
+            exponent = (self.total_steps / 2) - self.current_step
             y = 1 / (1 + math.exp(exponent))
             y = self.add_baseline(y)
-        elif self.shape == 'none':
+        elif self.shape == "none":
             y = 1.0
         else:
-            raise ValueError('Invalid shape for annealing function. Must be linear, cosine, or logistic.')
+            raise ValueError(
+                "Invalid shape for annealing function. Must be linear, cosine, or logistic."
+            )
         return y
 
     def step(self):

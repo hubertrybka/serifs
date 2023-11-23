@@ -36,7 +36,7 @@ class ClfDataset(Dataset):
     def load_mu_n_labels(path):
         df = pd.read_parquet(path)
         labels = torch.tensor(df.label.to_numpy())
-        df = df.drop(columns=['label', 'smiles'])
+        df = df.drop(columns=["label", "smiles"])
         tensor = torch.tensor(df.to_numpy())
         return tensor, labels
 

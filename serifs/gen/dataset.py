@@ -17,8 +17,8 @@ class GRUDataset(Dataset):
                                of integers (dense vectors).
             vectorizer: SELFIES vectorizer instantiated from vectorizer.py
         """
-        self.smiles = df['smiles']
-        self.fps = df['fps']
+        self.smiles = df["smiles"]
+        self.fps = df["fps"]
         self.fps = self.prepare_X(self.fps)
         self.smiles = self.prepare_y(self.smiles)
         self.alphabet = vectorizer.read_alphabet()
@@ -39,7 +39,7 @@ class GRUDataset(Dataset):
             y (torch.Tensor): vectorized SELFIES
         """
         raw_smile = self.smiles[idx]
-        raw_selfie = ''  # placeholder
+        raw_selfie = ""  # placeholder
         if self.smiles_enum:
             successful = False
             n_tries = 0
@@ -55,7 +55,7 @@ class GRUDataset(Dataset):
                     successful = True
                 else:
                     n_tries += 1
-                    print('error')
+                    print("error")
             if n_tries == 3:
                 raw_selfie = sf.encoder(raw_smile, strict=False)
         else:
@@ -66,7 +66,10 @@ class GRUDataset(Dataset):
         raw_X = self.fps[idx]
         X = np.array(raw_X, dtype=int)
         X_reconstructed = self.reconstruct_fp(X)
-        return torch.from_numpy(X_reconstructed).float(), torch.from_numpy(vectorized_selfie).float()
+        return (
+            torch.from_numpy(X_reconstructed).float(),
+            torch.from_numpy(vectorized_selfie).float(),
+        )
 
     def randomize_smiles(self, smiles):
         """
@@ -106,7 +109,7 @@ class VAEDataset(Dataset):
     """
 
     def __init__(self, df, fp_len):
-        self.fps = pd.DataFrame(df['fps'])
+        self.fps = pd.DataFrame(df["fps"])
         self.fp_len = fp_len
 
     def __len__(self):
