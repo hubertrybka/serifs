@@ -1,5 +1,10 @@
 # SERIFS: design of target-focused libraries by exploring active ligand subspaces encoded with fingerprints
 
+ [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+ [![python](https://img.shields.io/badge/Python-3.11-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
+ [![pytorch](https://img.shields.io/badge/PyTorch-2.0.1-EE4C2C.svg?style=flat&logo=pytorch)](https://pytorch.org)
+ [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 ## Authors: Hubert Rybka, Mateusz Iwan, Anton Siomchen, Tomasz Danel, Sabina Smusz
 
 <p align="center">
