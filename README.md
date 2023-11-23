@@ -77,7 +77,7 @@ Use the following command:
 
 **IMPORTANT**  
 Be sure to provide path to the dataset file (data_path) in the config file located here: `config_files/SVC_config.ini`.  
-Provide the weights for the RNN decoder model (model_path). This should be `models/GRUv3_KRFP/epoch_200.pt` or `models/GRUv3_ECFP/epoch_150.pt` prodived you used `get_datasets.sh` scirpt.
+Provide path to the weights of RNN decoder (model_path). Here you can use our pretrained KRFP and ECFP-based models. This should be `models/GRUv3_KRFP/epoch_200.pt` or `models/GRUv3_ECFP/epoch_150.pt` prodived you used `get_datasets.sh` scirpt.
 
 Other parameters can be set according to needs.
 
@@ -110,9 +110,9 @@ Directory 'SVC_{timestamp}' will be created on /results, containing the followin
 * latent_vectors.csv - latent vectors identified by the search  
 * info.txt - information about the search
 
-### Generate compound libraries from found latent vectors
+### Generate compound libraries from the latent vectors
 
-The generated compounds are filtered according to criteria, which can be modified in config_files/pred_config.ini.  
+The generated compounds are filtered according to criteria, which can be modified in `config_files/pred_config.ini`.  
 
 In order to generate a library, run
 
