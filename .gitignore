@@ -4,3 +4,13 @@ serifs/gen/__pycache__
 serifs/pred/__pycache__
 serifs/utils/__pycache__
 .idea
+data/d2_ECFP_100nM.parquet
+data/d2_klek_100nM.parquet
+data/RNN_dataset_ECFP.parquet
+data/RNN_dataset_KRFP.parquet
+*.pt
+models/GRUv3_ECFP/hyperparameters.ini
+models/GRUv3_KRFP/hyperparameters.ini
+data/RNN_dataset_KRFP_train_80.parquet
+data/RNN_dataset_KRFP_val_20.parquet
+models/jotaro-joestar/hyperparameters.ini
