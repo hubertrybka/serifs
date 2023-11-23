@@ -21,16 +21,17 @@ SELFIES-based Recurrent Neural Network for Interpretation of Fingerprint Space (
 3. Install environment from the YAML file: `conda env create -n mldd -f environment.yml`
 
 ## Usage
+
 ### Activate the environment:  
       conda activate mldd
 
 ### Prepare the dataset: 
 
-Please note that a dataset od D2 receptor ligands we used in our paper is available to be downloaded from our [dropbox](https://www.dropbox.com/scl/fo/o7pd38t8gnfoz9reqp7ot/h?rlkey=r2dh1sxrnt34bueza4snxn74b&dl=0) or by launching:
+Please note that the dataset od D2 receptor ligands we used in our paper is available to be downloaded from our [dropbox](https://www.dropbox.com/scl/fo/o7pd38t8gnfoz9reqp7ot/h?rlkey=r2dh1sxrnt34bueza4snxn74b&dl=0) or by launching:
       
       get_datasets.sh
 
-It is advised to use this script, as it automatically downloads all relevant datasets and puts them in appropriate catalogs.
+**It is advised to use this script, as it automatically downloads all relevant datasets and puts them in appropriate catalogs.**
 
 In order to reatrain the latent classifier, you have to provide an appropriate dataset. Put the data into pandas.DataFrame object. The dataframe must contain the following columns:  
       
@@ -55,45 +56,29 @@ df.to_parquet(f'data/activity_data/{name}.parquet', index=False)
 ```
 ### Train the RNN decoder
 
-(Advanced) This step can be omitted and you can use pretrained models. Model weights, as well as datasets needed for training, 
-are available on [dropbox](https://www.dropbox.com/scl/fo/o7pd38t8gnfoz9reqp7ot/h?rlkey=r2dh1sxrnt34bueza4snxn74b&dl=0) and can be batch downloaded using `get_datasets.sh` No more steps are needed to use 
-the pretrained model.
+(Advanced) This step can be omitted as it is advised to use our pretrained models. Model weights, as well as datasets used for training, are available on [dropbox](https://www.dropbox.com/scl/fo/o7pd38t8gnfoz9reqp7ot/h?rlkey=r2dh1sxrnt34bueza4snxn74b&dl=0) and can be batch downloaded using `get_datasets.sh` No more steps are needed to use the pretrained model.
 
 If you intend train the RNN, use the following command:
 
     python train_gru.py
 
-**Important!** Be sure to edit the config file in advance (config_files/train_config.ini) to set the desired parameters.
-In particular, you should provide path to the dataset file. This will be 
-`data/[RNN_dataset_KRFP.parquet](data%2FRNN_dataset_KRFP.parquet).parquet` 
-or `data/[RNN_dataset_ECFP.parquet](data%2FRNN_dataset_ECFP.parquet).parquet`
-if you used the `get_datasets.sh` script.
+**IMPORTANT**
+Be sure to edit the config file in advance (config_files/train_config.ini) to set the desired parameters.
+In particular, you should provide path to the dataset file. This will be `data/RNN_dataset_KRFP.parquet.parquet` or `data/RNN_dataset_ECFP.parquet.parquet`
+provided you used the `get_datasets.sh` script. Please adjust fp_len parameter according to the length of input fingerprint.
 
-Model weigthts and training progress will be saved to models/model_name.
-data_path = data/RNN_dataset_KRFP.parquet
+Model weigthts and training progress will be saved to models/model_name catalog.
+
 ### Train the SVC activity predictor.
 Use the following command:
   
     python train_clf.py
 
-Be sure to provide  path to the dataset file (prepared as explained above) using the -d (--data_path) flag.
-Other parameters are optional and can be set using command line arguments.
-```
---data_path DATA_PATH, -d DATA_PATH  
-                        Path to data file (prepared as described in above section)
---c_param C_PARAM, -c C_PARAM
-                  C parameter for SVM (default: 50)
-                  Commonly a float in the range [0.01, 100]
---kernel KERNEL, -k KERNEL
-                  Kernel type for SVM (default: 'rbf')
-                  One of: 'linear', 'poly', 'rbf', 'sigmoid'
---degree DEGREE, -deg DEGREE
-                  Degree of polynomial kernel
-                  Ignored by other kernels
---gamma GAMMA, -g GAMMA
-                  Gamma parameter for SVM (default: 'scale')
-                  One of: 'scale', 'auto', or a float
-```
+Be sure to provide path to the dataset file (data_path) in the config file located here: `config_files/SVC_config.ini`.  
+Provide the weights for the RNN decoder model (model_path). This should be `models/GRUv3_KRFP/epoch_200.pt` or `models/GRUv3_ECFP/epoch_150.pt` prodived you used `get_datasets.sh` scirpt.
+
+Other parameters can be set according to needs.
+
 For more info on the SVC classifier, please refer to [scikit-learn SVC documentation](https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html).
   
 Now a file with the trained model should be saved in the 'models' directory. Locate the directory,
@@ -105,34 +90,15 @@ It should look like this:
 
 ### Perform bayesian search on the latent space
   
-The trained activity predictor can be used to perform bayesian search on the latent space
-in order to identify latent representations of potential novel ligands.
+The trained activity predictor can be used to perform bayesian search on the latent space in order to identify latent representations of potential novel ligands.
 To perform bayesian search on the latent space, use the following command:
 
     python bayesian_search.py
 
-Be sure to provide the path to the model file using the -m (--model_path) flag, and the desired number of samples to be 
-generated using the -n (--n_samples) flag.
+**IMPORTANT**
+Be sure to provide the path to the model weights file, and the desired number of samples to be generated in `config_files/search_config`  
+Other parameters can be set according to needs:
 
-    python bayesian_search.py -m models/model_name/model.pkl -n 1000
-
-Other parameters can be set using the command line arguments:
-```
--m MODEL_PATH, --model_path MODEL_PATH
-                  Path to the saved activity predictor model
--n N_SAMPLES, --n_samples N_SAMPLES
-                  Number of samples to generate
--p INIT_POINTS, --init_points INIT_POINTS
-                  Number of initial points to sample (default: 8)
--i N_ITER, --n_iter N_ITER
-                  Number of iterations to perform (default: 20)
--b BOUNDS, --bounds BOUNDS
-                  Bounds for the latent space search (default: 4.0)
--v VERBOSITY, --verbosity VERBOSITY
-                  Verbosity: 0 - silent, 1 - normal, 2 - verbose (default 1)
--w N_WORKERS, --n_workers N_WORKERS
-                  Number of workers to use. (default: -1 [all available CPU cores])
-```
 For more info about the bayesian optimization process and the choice of non-default parameters refer to 
 [bayesian-optimization README](https://github.com/bayesian-optimization/BayesianOptimization).
   
@@ -146,27 +112,14 @@ Directory 'SVC_{timestamp}' will be created on /results, containing the followin
 
 The generated compounds are filtered according to criteria, which can be modified in config_files/pred_config.ini.  
 
-In order to generate a library, run `python predict.py`.  
-Provide path to latent_vectors.csv using -d (--data_path) flag, for example:
-  
-      python predict.py -d results/SVC_{timestamp}/latent_vectors.csv
+In order to generate a library, run
 
-Other parameters can be set using the command line arguments:
-```
--d DATA_PATH, --data_path DATA_PATH
-                  Path to data file 
--n N_SAMPLES, --n_samples N_SAMPLES
-                  Number of samples to generate for each latent vector. If > 1, the variety of the generated
-                  molecules will be increased by using dropout (default = 10)
--c CONFIG, --config CONFIG
-                  Path to config file (default: config_files/pred_config.ini)
--m MODEL_PATH, --model_path MODEL_PATH
-                  Path to model weights (default: models/GRUv3_ECFP/epoch_150.pt)
--v VERBOSITY, --verbosity VERBOSITY
-                  Verbosity level (0 - silent, 1 - progress, 2 - verbose)
--u USE_CUDA, --use_cuda USE_CUDA
-                  Use CUDA if available (default: False)
-```
+      python predict.py
+
+**IMPORTANT**
+Provide path to `latent_vectors.csv` in `config_files/pred_config.ini`
+
+Other parameters and filter criteria can be set accordint to needs.
 
 As a result, in results/SVC_{timestamp} dir, a new directory preds_{new_timestamp} will be created. This contains the following files:
 * predictions.csv, a file containing SMILES of the generated compounds, as well as some calculated molecular properties
