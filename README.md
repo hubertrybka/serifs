@@ -23,6 +23,7 @@ SELFIES-based Recurrent Neural Network for Interpretation of Fingerprint Space (
 ## Usage
 
 ### Activate the environment:  
+
       conda activate mldd
 
 ### Prepare the dataset: 
@@ -62,7 +63,7 @@ If you intend train the RNN, use the following command:
 
     python train_gru.py
 
-**IMPORTANT**
+**IMPORTANT**  
 Be sure to edit the config file in advance (config_files/train_config.ini) to set the desired parameters.
 In particular, you should provide path to the dataset file. This will be `data/RNN_dataset_KRFP.parquet.parquet` or `data/RNN_dataset_ECFP.parquet.parquet`
 provided you used the `get_datasets.sh` script. Please adjust fp_len parameter according to the length of input fingerprint.
@@ -74,6 +75,7 @@ Use the following command:
   
     python train_clf.py
 
+**IMPORTANT**  
 Be sure to provide path to the dataset file (data_path) in the config file located here: `config_files/SVC_config.ini`.  
 Provide the weights for the RNN decoder model (model_path). This should be `models/GRUv3_KRFP/epoch_200.pt` or `models/GRUv3_ECFP/epoch_150.pt` prodived you used `get_datasets.sh` scirpt.
 
@@ -95,7 +97,7 @@ To perform bayesian search on the latent space, use the following command:
 
     python bayesian_search.py
 
-**IMPORTANT**
+**IMPORTANT**  
 Be sure to provide the path to the model weights file, and the desired number of samples to be generated in `config_files/search_config`  
 Other parameters can be set according to needs:
 
@@ -117,7 +119,7 @@ In order to generate a library, run
       python predict.py
 
 **IMPORTANT**
-Provide path to `latent_vectors.csv` in `config_files/pred_config.ini`
+Be sure to provide path to `latent_vectors.csv` (latent encodings identified by bayesian search algorithm) in `config_files/pred_config.ini`
 
 Other parameters and filter criteria can be set accordint to needs.
 
