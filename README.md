@@ -118,7 +118,7 @@ In order to generate a library, run
 
       python predict.py
 
-**IMPORTANT**
+**IMPORTANT**  
 Be sure to provide path to `latent_vectors.csv` (latent encodings identified by bayesian search algorithm) in `config_files/pred_config.ini`
 
 Other parameters and filter criteria can be set accordint to needs.
