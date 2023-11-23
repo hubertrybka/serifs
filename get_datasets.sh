@@ -23,4 +23,4 @@ cd ../
 mkdir SVC_ECFP_150
 cd SVC_ECFP_150
 wget -O model.pkl 'https://www.dropbox.com/scl/fi/1mmjceoisvhis9j0t16sq/d2.pkl?rlkey=madnlty9hl28qnx0rm79whoru&dl=1'
-echo All datasets and models downloaded successfully
+echo All datasets and model weights downloaded successfully

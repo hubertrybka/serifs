@@ -19,9 +19,7 @@ def main(config_path):
     Training script for model with fully-connected encoder and GRU decoder
     """
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print('Using device:', device)
-    vectorizer = SELFIESVectorizer(pad_to_len=128)
+    # read config file
 
     config = configparser.ConfigParser()
     config.read(config_path)
@@ -42,14 +40,25 @@ def main(config_path):
     fc2_size = int(config['MODEL']['fc2_size'])
     fc3_size = int(config['MODEL']['fc3_size'])
     encoder_activation = str(config['MODEL']['encoder_activation'])
+    use_cuda = config.getboolean('RUN', 'use_cuda')
 
     val_size = round(1 - train_size, 1)
     train_percent = int(train_size * 100)
     val_percent = int(val_size * 100)
 
+    cuda_available = (torch.cuda.is_available() and use_cuda)
+    device = torch.device('cuda' if cuda_available else 'cpu')
+
+    print('Using device:', device)
+
+    vectorizer = SELFIESVectorizer(pad_to_len=128)
+
+    # read dataset
+
     dataset = pd.read_parquet(data_path)
 
-    # create a directory for this model if not there
+    # create a directory for this model weights if not there
+
     if not os.path.isdir(f'models/{run_name}'):
         os.mkdir(f'models/{run_name}')
 
@@ -57,6 +66,7 @@ def main(config_path):
         config.write(configfile)
 
     # if train_dataset not generated, perform scaffold split
+
     if (not os.path.isfile(data_path.split('.')[0] + f'_train_{train_percent}.parquet')
             or not os.path.isfile(data_path.split('.')[0] + f'_val_{val_percent}.parquet')):
         train_df, val_df = scaffold_split(dataset, train_size, seed=random_seed, shuffle=True)
@@ -67,6 +77,8 @@ def main(config_path):
         train_df = pd.read_parquet(data_path.split('.')[0] + f'_train_{train_percent}.parquet')
         val_df = pd.read_parquet(data_path.split('.')[0] + f'_val_{val_percent}.parquet')
     scoring_df = val_df.sample(frac=0.1, random_state=random_seed)
+
+    # prepare dataloaders
 
     train_dataset = GRUDataset(train_df, vectorizer, fp_len, smiles_enum=smiles_enum)
     val_dataset = GRUDataset(val_df, vectorizer, fp_len, smiles_enum=False)
@@ -88,6 +100,7 @@ def main(config_path):
                                 drop_last=True, num_workers=NUM_WORKERS)
 
     # Init model
+
     model = EncoderDecoderV3(
         fp_size=fp_len,
         encoding_size=encoding_size,
@@ -111,7 +124,7 @@ if __name__ == '__main__':
     parser.add_argument('-c',
                         '--config',
                         type=str,
-                        default='config_files/train_config.ini',
+                        default='config_files/RNN_config.ini',
                         help='Path to config file')
     config_path = parser.parse_args().config
     main(config_path)

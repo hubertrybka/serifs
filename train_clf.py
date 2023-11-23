@@ -2,13 +2,13 @@ import argparse
 import os
 import pickle
 import time
+import configparser
 
 import numpy as np
 import pandas as pd
 import sklearn.model_selection
 import torch
 import torch.utils.data as D
-import wandb
 from sklearn.metrics import roc_auc_score, confusion_matrix
 from sklearn.svm import SVC
 
@@ -17,33 +17,59 @@ from serifs.gen.generator import EncoderDecoderV3
 from serifs.utils.modelinit import initialize_model
 
 
-def main(data_path, model_path, c_param=50, kernel='rbf', degree=3, gamma='scale'):
+def main(config_path):
     """
     Trains an SVM classifier on the latent space of the model.
     """
+
+    # read config file
+    
+    config = configparser.ConfigParser()
+    config.read(config_path)
+    data_path = str(config['SVC']['data_path'])
+    model_path = str(config['SVC']['model_path'])
+    c_param = float(config['SVC']['c_param'])
+    kernel = str(config['SVC']['kernel'])
+    gamma = str(config['SVC']['gamma'])
+    use_cuda = config.getboolean('SVC', 'use_cuda')
+
     start_time = time.time()
-    receptor = data_path.split('/')[-1].split('_')[0]
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    cuda_available = (torch.cuda.is_available() and use_cuda)
+    device = torch.device('cuda' if cuda_available else 'cpu')
+    print(f'Using device: {device}')
+
+    # read dataset
+
     data = pd.read_parquet(data_path, columns=['smiles', 'activity', 'fps'])
     data.reset_index(drop=True, inplace=True)
     print(f'Loaded data from {data_path}')
     activity = data['activity']
+
+    # load model
+
     config_path = '/'.join(model_path.split('/')[:-1]) + '/hyperparameters.ini'
     model = initialize_model(config_path,
                              dropout=False,
                              device=device)
     model.load_state_dict(torch.load(model_path, map_location=device))
 
+    # encode data into latent space vectors
+
     print('Encoding data...')
     mus, _ = encode(data, model, device)
     data = pd.DataFrame(mus)
     data['activity'] = activity
     data.reset_index(drop=True, inplace=True)
+
+    # split into train and test set
+
     train, test = sklearn.model_selection.train_test_split(data, test_size=0.1, random_state=42)
+
+    # train SVM
 
     SV_params = {'C': c_param,
                  'kernel': kernel,
-                 'degree': degree,
                  'gamma': gamma,
                  'shrinking': True,
                  'probability': True,
@@ -53,46 +79,36 @@ def main(data_path, model_path, c_param=50, kernel='rbf', degree=3, gamma='scale
 
     train_X = train.drop('activity', axis=1)
     train_y = train['activity']
-    print(train_X.shape, train_y.shape)
     test_X = test.drop('activity', axis=1)
     test_y = test['activity']
+    print('Training set size:', train_X.shape[0])
+    print('Test set size:', test_X.shape[0])
 
     print('Training...')
     svc.fit(train_X, train_y)
+    model_name = model_path.split('/')[-2]
+    clf_name = f'SVC_{model_name}'
 
-    timestamp = time.strftime('%Y%m%d_%H%M%S')
-    model_name = model_path.split('/')[-2].split('_')[-1]
-    epoch = model_path.split('/')[-1].split('.')[0].split('_')[-1]
-    name_extended = f'SVC_{model_name}_{epoch}'
-    #name_extended = f'SVC_{timestamp}'
     # save model
 
-    if not os.path.exists(f'models/{name_extended}'):
-        os.mkdir(f'models/{name_extended}')
-    with open(f'./models/{name_extended}/{receptor}.pkl', 'wb') as file:
+    if not os.path.exists(f'models/{clf_name}'):
+        os.mkdir(f'models/{clf_name}')
+    with open(f'./models/{clf_name}/clf.pkl', 'wb') as file:
         pickle.dump(svc, file)
 
     # evaluate
+
     print('Evaluating...')
     metrics = evaluate(svc, test_X, test_y)
-    # wandb
-
-    wandb.init(
-        project='sklearn-clf',
-        config=SV_params,
-        name=name_extended
-    )
-    wandb.log(metrics)
-    wandb.finish()
 
     metrics_df = pd.DataFrame(metrics, index=[0])
-    metrics_df.to_csv(f'models/{name_extended}/metrics_{receptor}.csv', index=False)
+    metrics_df.to_csv(f'models/{clf_name}/metrics.csv', index=False)
 
     time_elapsed = round((time.time() - start_time), 2)
     if time_elapsed < 60:
-        print(f'Done in {time_elapsed} seconds')
+        print(f'Executed in {time_elapsed} seconds')
     else:
-        print(f'Done in {round(time_elapsed / 60, 2)} minutes')
+        print(f'Executed in {round(time_elapsed / 60, 2)} minutes')
     return
 
 
@@ -146,19 +162,13 @@ def evaluate(model, test_X, test_y):
 
 
 if __name__ == '__main__':
+
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_path', '-d', type=str, required=True,
-                        help='Path to data file')
-    parser.add_argument('--model_path', '-m', type=str, required=True,
-                        help='Path to saved model')
-    parser.add_argument('--c_param', '-c', type=float, default=50,
-                        help='C parameter for SVM. Commonly a float in range [0.01, 1000]')
-    parser.add_argument('--kernel', '-k', type=str, default='rbf',
-                        help='Kernel type for SVM',
-                        choices=['linear', 'poly', 'rbf', 'sigmoid'])
-    parser.add_argument('--degree', '-deg', type=int, default=3,
-                        help='Degree of polynomial kernel (ignored by other kernels)')
-    parser.add_argument('--gamma', '-g', type=str, default='scale',
-                        help='Gamma parameter for SVM. Can be "scale" or "auto" or a float.')
+    parser.add_argument('-c',
+                        '--config',
+                        type=str,
+                        default='config_files/SVC_config.ini',
+                        help='Path to SVC config file')
     args = parser.parse_args()
-    main(args.data_path, args.model_path, args.c_param, args.kernel, args.degree, args.gamma)
+    config_path = args.config
+    main(config_path)
