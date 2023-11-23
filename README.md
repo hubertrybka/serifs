@@ -2,6 +2,10 @@
 
 ## Authors: Hubert Rybka, Mateusz Iwan, Anton Siomchen, Tomasz Danel, Sabina Smusz
 
+<p align="center">
+      <img src="/TOC.png" width="512">
+</p>
+
 ## Table of contents
 * [General info](#general-info)
 * [Setup](#setup)
@@ -26,7 +30,7 @@ Please note that a dataset od D2 receptor ligands we used in our paper is availa
       
       get_datasets.sh
 
-It is advised to use this script, as it automatically download all saved datasetsa and model wights, and puts them in appropriate catalogs.
+It is advised to use this script, as it automatically downloads all relevant datasets and puts them in appropriate catalogs.
 
 In order to reatrain the latent classifier, you have to provide an appropriate dataset. Put the data into pandas.DataFrame object. The dataframe must contain the following columns:  
       
