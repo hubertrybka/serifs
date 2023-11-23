@@ -29,7 +29,6 @@ def main(config_path):
     batch_size = int(config['RUN']['batch_size'])
     data_path = str(config['RUN']['data_path'])
     NUM_WORKERS = int(config['RUN']['num_workers'])
-    smiles_enum = config.getboolean('RUN', 'smiles_enum')
     encoding_size = int(config['MODEL']['encoding_size'])
     hidden_size = int(config['MODEL']['hidden_size'])
     num_layers = int(config['MODEL']['num_layers'])
@@ -80,9 +79,9 @@ def main(config_path):
 
     # prepare dataloaders
 
-    train_dataset = GRUDataset(train_df, vectorizer, fp_len, smiles_enum=smiles_enum)
-    val_dataset = GRUDataset(val_df, vectorizer, fp_len, smiles_enum=False)
-    scoring_dataset = GRUDataset(scoring_df, vectorizer, fp_len, smiles_enum=False)
+    train_dataset = GRUDataset(train_df, vectorizer, fp_len)
+    val_dataset = GRUDataset(val_df, vectorizer, fp_len)
+    scoring_dataset = GRUDataset(scoring_df, vectorizer, fp_len)
 
     print("Dataset size:", len(dataset))
     print("Train size:", len(train_dataset))
