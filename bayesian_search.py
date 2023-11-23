@@ -5,6 +5,7 @@ import queue
 import random
 import time
 import warnings
+import configparser
 
 import numpy as np
 import pandas as pd
@@ -21,30 +22,31 @@ def warn(*args, **kwargs):
 warnings.warn = warn
 
 
-def search(args, return_list):
+def search(config_path, return_list):
     """
     Perform Bayesian optimization on the latent space in respect to the discriminator output
     Args:
-        args: dictionary of arguments (argparse)
-            contains:
-                model_path: path to the model
-                n_samples: number of samples to generate
-                init_points: number of initial points to sample
-                n_iter: number of iterations to perform
-                bounds: bounds for the latent space search
-                verbosity: verbosity level
-                latent_size: size of the latent space
+        config_path: path to the config file
         return_list: list to append results to (multiprocessing)
     Returns:
         None
     """
 
+    config = configparser.ConfigParser(allow_no_value=True)
+    config.read(config_path)
+    model_path = config['SEARCH']['model_path']
+    latent_size = int(config['SEARCH']['latent_size'])
+    init_points = int(config['SEARCH']['init_points'])
+    n_iter = int(config['SEARCH']['n_iter'])
+    bounds = float(config['SEARCH']['bounds'])
+    verbosity = int(config['SEARCH']['verbosity'])
+
     # initialize scorer
-    latent_size = args.latent_size
-    scorer = SKLearnScorer(args.model_path, penalize=False)
+    latent_size = latent_size
+    scorer = SKLearnScorer(model_path, penalize=False)
 
     # define bounds
-    pbounds = {str(p): (-args.bounds, args.bounds) for p in range(latent_size)}
+    pbounds = {str(p): (-bounds, bounds) for p in range(latent_size)}
 
     bounds_transformer = SequentialDomainReductionTransformer(minimum_window=0.2)
 
@@ -53,7 +55,7 @@ def search(args, return_list):
         f=scorer,
         pbounds=pbounds,
         random_state=(time.time_ns() % 10 ** 6),
-        verbose=args.verbosity > 1,
+        verbose=verbosity > 1,
         bounds_transformer=bounds_transformer
     )
 
@@ -62,8 +64,8 @@ def search(args, return_list):
 
     # run optimization:
     optimizer.maximize(
-        init_points=args.init_points,
-        n_iter=args.n_iter,
+        init_points=init_points,
+        n_iter=n_iter,
     )
     vector = np.array(list(optimizer.max['params'].values()))
 
@@ -87,43 +89,41 @@ if __name__ == '__main__':
     """
     start_time = time.time()
     parser = argparse.ArgumentParser()
-    parser.add_argument('-m', '--model_path', type=str, required=True,
-                        help='Path to the saved activity predictor model')
-    parser.add_argument('-n', '--n_samples', type=int, default=10,
-                        help='Number of samples to generate')
-    parser.add_argument('-p', '--init_points', type=int, default=8,
-                        help='Number of initial points to sample')
-    parser.add_argument('-i', '--n_iter', type=int, default=20,
-                        help='Number of iterations to perform')
-    parser.add_argument('-b', '--bounds', type=float, default=4.0,
-                        help='Bounds for the latent space search')
-    parser.add_argument('-v', '--verbosity', type=int, default=1,
-                        help='Verbosity: 0 - silent, 1 - normal, 2 - verbose')
-    parser.add_argument('-l', '--latent_size', type=int, default=32,
-                        help='Size of the latent space vector')
-    parser.add_argument('-w', '--n_workers', type=int, default=-1,
-                        help='Number of workers to use. Default: -1 (all available CPU cores)')
+    parser.add_argument('-c', '--config', type=str, default='config_files/search_config.ini')
+    config_path = parser.parse_args().config
+
+    # read config file
+    config = configparser.ConfigParser()
+    config.read(config_path)
+
+    n_workers = int(config['SEARCH']['n_workers'])
+    verbosity = int(config['SEARCH']['verbosity'])
+    n_samples = int(config['SEARCH']['n_samples'])
+    init_points = int(config['SEARCH']['init_points'])
+    n_iter = int(config['SEARCH']['n_iter'])
+    bounds = float(config['SEARCH']['bounds'])
+    latent_size = int(config['SEARCH']['latent_size'])
+    model_path = config['SEARCH']['model_path']
 
     samples = pd.DataFrame()  # placeholder
-    args = parser.parse_args()
 
     manager = mp.Manager()
     return_list = manager.list()
     cpu_cores = mp.cpu_count()
-    if args.n_workers != -1:
-        cpus = args.n_workers if args.n_workers < cpu_cores else cpu_cores
+    if n_workers != -1:
+        cpus = n_workers if n_workers < cpu_cores else cpu_cores
     else:
         cpus = cpu_cores
 
-    print("Number of workers: ", cpus) if args.verbosity > 0 else None
+    print("Number of workers: ", cpus) if verbosity > 0 else None
 
     queue = queue.Queue()
 
-    for i in range(args.n_samples):
-        proc = mp.Process(target=search, args=[args, return_list])
+    for i in range(n_samples):
+        proc = mp.Process(target=search, args=[init_points, n_iter, verbosity, return_list])
         queue.put(proc)
 
-    print('(mp) Processes in queue: ', queue.qsize()) if args.verbosity > 0 else None
+    print('(mp) Processes in queue: ', queue.qsize()) if verbosity > 0 else None
 
     queue_initial_size = queue.qsize()
     if queue_initial_size >= 1000:
@@ -140,7 +140,7 @@ if __name__ == '__main__':
     while True:
         processes = []
         if queue.empty():
-            print("(mp) Queue handled successfully") if args.verbosity > 0 else None
+            print("(mp) Queue handled successfully") if verbosity > 0 else None
             break
         while len(mp.active_children()) < cpus:
             if queue.empty():
@@ -148,7 +148,7 @@ if __name__ == '__main__':
             proc = queue.get()
             proc.start()
             if queue.qsize() % period == 0:
-                print('(mp) Processes in queue: ', queue.qsize()) if args.verbosity > 0 else None
+                print('(mp) Processes in queue: ', queue.qsize()) if verbosity > 0 else None
             processes.append(proc)
 
             # complete the processes
@@ -160,15 +160,15 @@ if __name__ == '__main__':
     end_time = time.time()
     time_elapsed = (end_time - start_time) / 60  # in minutes
     if time_elapsed < 60:
-        print("Time elapsed: ", round(time_elapsed, 2), "min") if args.verbosity > 0 else None
+        print("Time elapsed: ", round(time_elapsed, 2), "min") if verbosity > 0 else None
     else:
         print("Time elapsed: ",
               int(time_elapsed // 60), "h",
-              round(time_elapsed % 60, 2), "min") if args.verbosity > 0 else None
+              round(time_elapsed % 60, 2), "min") if verbosity > 0 else None
 
     # save the results
     timestamp = time.strftime("%Y%m%d_%H%M%S")
-    receptor = args.model_path.split('/')[-1].split('.')[-2]
+    receptor = model_path.split('/')[-1].split('.')[-2]
     model_name = receptor + '_SVC_' + timestamp
 
     # create results directory
@@ -179,14 +179,14 @@ if __name__ == '__main__':
 
     # save the arguments
     with open(f'results/{model_name}/info.txt', 'w') as f:
-        text = [f'model_path: {args.model_path}',
-                f'latent_size: {args.latent_size}',
-                f'n_samples: {args.n_samples}',
-                f'init_points: {args.init_points}',
-                f'n_iter: {args.n_iter}',
-                f'bounds: {args.bounds}',
-                f'verbosity: {args.verbosity}',
-                f'time elapsed per sample: {round(time_elapsed / args.n_samples, 2)} min',
+        text = [f'model_path: {model_path}',
+                f'latent_size: {latent_size}',
+                f'n_samples: {n_samples}',
+                f'init_points: {init_points}',
+                f'n_iter: {n_iter}',
+                f'bounds: {bounds}',
+                f'verbosity: {verbosity}',
+                f'time elapsed per sample: {round(time_elapsed / n_samples, 2)} min',
                 f'mean score: {round(samples["score"].mean(), 2)}',
                 f'sigma score: {round(samples["score"].std(), 2)}',
                 f'mean norm: {round(samples["norm"].mean(), 2)}',

@@ -5,7 +5,6 @@ import rdkit.Chem as Chem
 import rdkit.Chem.QED as QED
 import selfies as sf
 import torch
-import wandb
 
 from serifs.gen.loss import CCE
 from serifs.utils.annealing import Annealer
@@ -22,7 +21,6 @@ def train(config, model, train_loader, val_loader, scoring_loader):
     epochs = int(config['RUN']['epochs'])
     run_name = str(config['RUN']['run_name'])
     learn_rate = float(config['RUN']['learn_rate'])
-    use_wandb = config.getboolean('RUN', 'use_wandb')
     kld_backward = config.getboolean('RUN', 'kld_backward')
     start_epoch = int(config['RUN']['start_epoch'])
     kld_weight = float(config['RUN']['kld_weight'])
@@ -31,15 +29,6 @@ def train(config, model, train_loader, val_loader, scoring_loader):
     annealing_shape = str(config['RUN']['annealing_shape'])
 
     annealing_agent = Annealer(annealing_max_epoch, annealing_shape)
-
-    # start a new wandb run to track this script
-    if use_wandb:
-        log_dict = {s: dict(config.items(s)) for s in config.sections()}
-        wandb.init(
-            project='gru',
-            config=log_dict,
-            name=run_name
-        )
 
     # Define dataframe for logging progress
     epochs_range = range(start_epoch, epochs + start_epoch)
@@ -81,9 +70,9 @@ def train(config, model, train_loader, val_loader, scoring_loader):
             optimizer.step()
             epoch_loss += loss.item()
 
-        # calculate loss and log to wandb
         avg_loss = epoch_loss / len(train_loader)
         val_loss = evaluate(model, val_loader)
+
         if epoch % 10 == 0:
             start = time.time()
             mean_qed, mean_fp_recon = get_scores(model, scoring_loader)
@@ -101,8 +90,6 @@ def train(config, model, train_loader, val_loader, scoring_loader):
                         'mean_qed': mean_qed,
                         'mean_fp_recon': mean_fp_recon
                         }
-        if use_wandb:
-            wandb.log(metrics_dict)
 
         if kld_annealing:
             annealing_agent.step()
@@ -118,7 +105,6 @@ def train(config, model, train_loader, val_loader, scoring_loader):
         loop_time = (end_time - start_time) / 60  # in minutes
         print(f'Epoch {epoch} completed in {loop_time} minutes')
 
-    wandb.finish()
     return None
 
 

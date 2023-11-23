@@ -63,9 +63,14 @@ If you intend train the RNN, use the following command:
 
     python train_gru.py
 
-Be sure to edit the config file in advance (config_files/train_config.ini) to set the desired parameters.
-Model weigthts and training progress will be saved to models/model_name.
+**Important!** Be sure to edit the config file in advance (config_files/train_config.ini) to set the desired parameters.
+In particular, you should provide path to the dataset file. This will be 
+`data/[RNN_dataset_KRFP.parquet](data%2FRNN_dataset_KRFP.parquet).parquet` 
+or `data/[RNN_dataset_ECFP.parquet](data%2FRNN_dataset_ECFP.parquet).parquet`
+if you used the `get_datasets.sh` script.
 
+Model weigthts and training progress will be saved to models/model_name.
+data_path = data/RNN_dataset_KRFP.parquet
 ### Train the SVC activity predictor.
 Use the following command:
   
