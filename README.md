@@ -66,7 +66,7 @@ df.to_parquet(f'data/activity_data/{name}.parquet', index=False)
 
 If you intend train the RNN, use the following command:
 
-    python train_gru.py
+    python train_RNN.py
 
 **IMPORTANT**  
 Be sure to edit the config file in advance (config_files/train_config.ini) to set the desired parameters.
