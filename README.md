@@ -103,7 +103,7 @@ To perform bayesian search on the latent space, use the following command:
     python bayesian_search.py
 
 **IMPORTANT**  
-Be sure to provide the path to the model weights file, and the desired number of samples to be generated in `config_files/search_config`  
+Be sure to provide the path to the model (SVC) file, and the desired number of samples to be generated in `config_files/search_config.ini`  
 Other parameters can be set according to needs:
 
 For more info about the bayesian optimization process and the choice of non-default parameters refer to 
@@ -117,14 +117,14 @@ Directory 'SVC_{timestamp}' will be created on /results, containing the followin
 
 ### Generate compound libraries from the latent vectors
 
-The generated compounds are filtered according to criteria, which can be modified in `config_files/pred_config.ini`.  
+The generated compounds are filtered according to criteria which can be modified in `config_files/pred_config.ini`.  
 
 In order to generate a library, run
 
       python predict.py
 
 **IMPORTANT**  
-Be sure to provide path to `latent_vectors.csv` (latent encodings identified by bayesian search algorithm) in `config_files/pred_config.ini`
+Be sure to provide path to `latent_vectors.csv` (latent encodings identified by bayesian search algorithm), as well as the RNN model weights file in `config_files/pred_config.ini`
 
 Other parameters and filter criteria can be set accordint to needs.
 
