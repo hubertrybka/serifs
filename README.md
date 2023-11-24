@@ -73,7 +73,7 @@ Be sure to edit the config file in advance (config_files/train_config.ini) to se
 In particular, you should provide path to the dataset file. This will be `data/RNN_dataset_KRFP.parquet.parquet` or `data/RNN_dataset_ECFP.parquet.parquet`
 provided you used the `get_datasets.sh` script. Please adjust fp_len parameter according to the length of input fingerprint.
 
-Model weigthts and training progress will be saved to models/model_name catalog.
+Model weights and training progress will be saved to models/model_name catalog.
 
 ### Train the SVC activity predictor.
 Use the following command:
