@@ -185,6 +185,7 @@ if __name__ == "__main__":
     model_name = "bayesian_search_" + timestamp
 
     # create results directory
+    os.mkdir("outputs") if not os.path.isdir("outputs") else None
     os.mkdir(f"outputs/{model_name}")
 
     # save the results
