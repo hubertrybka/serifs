@@ -5,7 +5,7 @@
  [![pytorch](https://img.shields.io/badge/PyTorch-2.0.1-EE4C2C.svg?style=flat&logo=pytorch)](https://pytorch.org)
  [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-## Authors: Hubert Rybka, Mateusz Iwan, Anton Siomchen, Tomasz Danel, Sabina Smusz
+## Authors: Hubert Rybka, Mateusz Iwan, Anton Siomchen, Tomasz Danel, Sabina Podlewska
 
 <p align="center">
       <img src="/TOC.png" width="512">
