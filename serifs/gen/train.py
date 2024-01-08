@@ -1,4 +1,5 @@
 import time
+import wandb
 
 import pandas as pd
 import rdkit.Chem as Chem
@@ -11,7 +12,7 @@ from serifs.utils.annealing import Annealer
 from serifs.utils.vectorizer import SELFIESVectorizer
 
 
-def train(config, model, train_loader, val_loader, scoring_loader):
+def train(config, model, train_loader, val_loader, scoring_loader, use_wandb):
     """
     Training loop for the model consisting of a VAE encoder and GRU decoder
     """
@@ -27,6 +28,13 @@ def train(config, model, train_loader, val_loader, scoring_loader):
     kld_annealing = config.getboolean("RUN", "kld_annealing")
     annealing_max_epoch = int(config["RUN"]["annealing_max_epoch"])
     annealing_shape = str(config["RUN"]["annealing_shape"])
+
+    config_dict = {s: dict(config.items(s)) for s in config.sections()}
+    if use_wandb:
+        wandb.init(
+            project=run_name,
+            config=config_dict
+        )
 
     annealing_agent = Annealer(annealing_max_epoch, annealing_shape)
 
@@ -95,7 +103,8 @@ def train(config, model, train_loader, val_loader, scoring_loader):
             "mean_qed": mean_qed,
             "mean_fp_recon": mean_fp_recon,
         }
-
+        if use_wandb:
+            wandb.log(metrics_dict)
         if kld_annealing:
             annealing_agent.step()
 
@@ -110,6 +119,8 @@ def train(config, model, train_loader, val_loader, scoring_loader):
         loop_time = (end_time - start_time) / 60  # in minutes
         print(f"Epoch {epoch} completed in {loop_time} minutes")
 
+    if use_wandb:
+        wandb.finish()
     return None
 
 

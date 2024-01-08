@@ -14,17 +14,34 @@ class VAEEncoder(nn.Module):
         fc2_size (int): size of the second fully connected layer
         fc3_size (int): size of the third fully connected layer
         activation (str): activation function ('relu', 'elu', 'gelu' or 'leaky_relu')
+        fc2_enabled (bool): whether to use the second fully connected layer
+        fc3_enabled (bool): whether to use the third fully connected layer
     """
 
     def __init__(
-        self, input_size, output_size, fc1_size, fc2_size, fc3_size, activation="relu"
+        self, input_size, output_size, fc1_size, fc2_size, fc3_size, activation="relu", fc2_enabled=True, fc3_enabled=True
     ):
         super(VAEEncoder, self).__init__()
         self.fc1 = nn.Linear(input_size, fc1_size)
-        self.fc2 = nn.Linear(fc1_size, fc2_size)
-        self.fc3 = nn.Linear(fc2_size, fc3_size)
-        self.fc41 = nn.Linear(fc3_size, output_size)
-        self.fc42 = nn.Linear(fc3_size, output_size)
+
+        if fc2_enabled:
+            self.fc2 = nn.Linear(fc1_size, fc2_size)
+        if fc2_enabled and fc3_enabled:
+            self.fc3 = nn.Linear(fc2_size, fc3_size)
+
+        if fc3_enabled and fc2_enabled:
+            self.fc41 = nn.Linear(fc3_size, output_size)
+            self.fc42 = nn.Linear(fc3_size, output_size)
+        elif fc2_enabled:
+            self.fc41 = nn.Linear(fc2_size, output_size)
+            self.fc42 = nn.Linear(fc2_size, output_size)
+        else:
+            self.fc41 = nn.Linear(fc1_size, output_size)
+            self.fc42 = nn.Linear(fc1_size, output_size)
+
+        self.fc2_enabled = fc2_enabled
+        self.fc3_enabled = fc3_enabled
+
         if activation == "relu":
             self.relu = nn.ReLU()
         elif activation == "leaky_relu":
@@ -36,6 +53,7 @@ class VAEEncoder(nn.Module):
         else:
             raise ValueError("Activation must be one of: relu, leaky_relu, elu, gelu")
 
+
     def forward(self, x):
         """
         Args:
@@ -45,8 +63,14 @@ class VAEEncoder(nn.Module):
             logvar: (torch.tensor): log variance
         """
         h1 = self.relu(self.fc1(x))
-        h2 = self.relu(self.fc2(h1))
-        h3 = self.relu(self.fc3(h2))
+        if self.fc2_enabled:
+            h2 = self.relu(self.fc2(h1))
+        else:
+            h2 = h1
+        if self.fc3_enabled:
+            h3 = self.relu(self.fc3(h2))
+        else:
+            h3 = h2
         mu = self.fc41(h3)
         logvar = self.fc42(h3)
         return mu, logvar
@@ -175,6 +199,8 @@ class EncoderDecoderV3(nn.Module):
         fc2_size (int): size of the second fully connected layer in the encoder
         fc3_size (int): size of the third fully connected layer in the encoder
         encoder_activation (str): activation function for the encoder ('relu', 'elu', 'gelu' or 'leaky_relu')
+        fc2_enabled (bool): whether to use the second fully connected layer in the encoder
+        fc3_enabled (bool): whether to use the third fully connected layer in the encoder
     """
 
     def __init__(
@@ -192,11 +218,13 @@ class EncoderDecoderV3(nn.Module):
         fc2_size=1024,
         fc3_size=512,
         encoder_activation="relu",
+        fc2_enabled=True,
+        fc3_enabled=True,
     ):
         super(EncoderDecoderV3, self).__init__()
         self.fp_size = fp_size
         self.encoder = VAEEncoder(
-            fp_size, encoding_size, fc1_size, fc2_size, fc3_size, encoder_activation
+            fp_size, encoding_size, fc1_size, fc2_size, fc3_size, encoder_activation, fc2_enabled, fc3_enabled
         )
         self.decoder = GRUDecoder(
             hidden_size,

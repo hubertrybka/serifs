@@ -23,6 +23,7 @@ def main(config_path):
 
     config = configparser.ConfigParser()
     config.read(config_path)
+    run_name = str(config["RUN"]["run_name"])
     train_size = float(config["RUN"]["train_size"])
     random_seed = int(config["RUN"]["random_seed"])
     run_name = str(config["RUN"]["run_name"])
@@ -39,6 +40,8 @@ def main(config_path):
     fc2_size = int(config["MODEL"]["fc2_size"])
     fc3_size = int(config["MODEL"]["fc3_size"])
     encoder_activation = str(config["MODEL"]["encoder_activation"])
+    fc2_enabled = config.getboolean("MODEL", "fc2_enabled")
+    fc3_enabled = config.getboolean("MODEL", "fc3_enabled")
     use_cuda = config.getboolean("RUN", "use_cuda")
 
     val_size = round(1 - train_size, 1)
@@ -136,9 +139,11 @@ def main(config_path):
         fc2_size=fc2_size,
         fc3_size=fc3_size,
         encoder_activation=encoder_activation,
+        fc2_enabled=fc2_enabled,
+        fc3_enabled=fc3_enabled,
     ).to(device)
 
-    _ = train(config, model, train_loader, val_loader, scoring_loader)
+    _ = train(config, model, train_loader, val_loader, scoring_loader, use_wandb=True)
     return None
 
 
